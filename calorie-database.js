@@ -1,5 +1,5 @@
-// カロリーデータベース（100gあたりのカロリー）
-const calorieDatabase = {
+// 栄養データベース（100gあたり）
+const nutritionDatabase = {
     // 穀物・主食
     "ご飯": 168,
     "パン": 264,

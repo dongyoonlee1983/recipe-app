@@ -186,11 +186,13 @@ saveRecipeBtn.addEventListener('click', () => {
         const calories = parseInt(row.querySelector('.calorie-display').textContent) || 0;
         
         if (ingredientName && amount) {
+            const nutrition = calculateNutrition(ingredientName, parseFloat(amount), unit);
             ingredients.push({
                 name: ingredientName,
                 amount: parseFloat(amount),
                 unit: unit,
-                calories: calories
+                calories: calories,
+                nutrition: nutrition
             });
             totalCalories += calories;
         }
@@ -326,6 +328,7 @@ function displayRecipes(searchTerm = '') {
             <div class="recipe-calories">
                 合計: ${recipe.totalCalories} kcal | 1人分: ${recipe.caloriesPerServing} kcal
             </div>
+            ${getNutritionHTML(recipe)}
             <button class="delete-btn" onclick="deleteRecipe(${recipe.id})">削除</button>
         `;
         
@@ -385,6 +388,113 @@ function updateFavoriteCount() {
 searchInput.addEventListener('input', (e) => {
     displayRecipes(e.target.value);
 });
+
+// 栄養素情報のHTML生成
+function getNutritionHTML(recipe) {
+    // 栄養素の合計を計算
+    let totalProtein = 0;
+    let totalFat = 0;
+    let totalCarbs = 0;
+    
+    recipe.ingredients.forEach(ing => {
+        if (ing.nutrition) {
+            totalProtein += ing.nutrition.protein || 0;
+            totalFat += ing.nutrition.fat || 0;
+            totalCarbs += ing.nutrition.carbs || 0;
+        }
+    });
+    
+    const proteinPerServing = Math.round(totalProtein / recipe.servings * 10) / 10;
+    const fatPerServing = Math.round(totalFat / recipe.servings * 10) / 10;
+    const carbsPerServing = Math.round(totalCarbs / recipe.servings * 10) / 10;
+    
+    // 栄養素の旧レシピチェック（栄養情報がない場合）
+    if (totalProtein === 0 && totalFat === 0 && totalCarbs === 0) {
+        return '';
+    }
+    
+    const chartId = `nutrition-chart-${recipe.id}`;
+    
+    return `
+        <div class="nutrition-info">
+            <h5>栄養バランス（1人分）</h5>
+            <div class="nutrition-values">
+                <div class="nutrition-item">
+                    <div class="label">たんぱく質</div>
+                    <div class="value">${proteinPerServing}</div>
+                    <div class="unit">g</div>
+                </div>
+                <div class="nutrition-item">
+                    <div class="label">脂質</div>
+                    <div class="value">${fatPerServing}</div>
+                    <div class="unit">g</div>
+                </div>
+                <div class="nutrition-item">
+                    <div class="label">炭水化物</div>
+                    <div class="value">${carbsPerServing}</div>
+                    <div class="unit">g</div>
+                </div>
+            </div>
+            <div class="nutrition-chart-container">
+                <canvas id="${chartId}" width="200" height="200"></canvas>
+            </div>
+        </div>
+    `;
+}
+
+// 栄養チャートの描画
+function drawNutritionCharts() {
+    setTimeout(() => {
+        recipes.forEach(recipe => {
+            const chartElement = document.getElementById(`nutrition-chart-${recipe.id}`);
+            if (chartElement) {
+                // 栄養素の合計を計算
+                let totalProtein = 0;
+                let totalFat = 0;
+                let totalCarbs = 0;
+                
+                recipe.ingredients.forEach(ing => {
+                    if (ing.nutrition) {
+                        totalProtein += ing.nutrition.protein || 0;
+                        totalFat += ing.nutrition.fat || 0;
+                        totalCarbs += ing.nutrition.carbs || 0;
+                    }
+                });
+                
+                const proteinPerServing = Math.round(totalProtein / recipe.servings * 10) / 10;
+                const fatPerServing = Math.round(totalFat / recipe.servings * 10) / 10;
+                const carbsPerServing = Math.round(totalCarbs / recipe.servings * 10) / 10;
+                
+                new Chart(chartElement, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['たんぱく質', '脂質', '炭水化物'],
+                        datasets: [{
+                            data: [proteinPerServing, fatPerServing, carbsPerServing],
+                            backgroundColor: ['#4CAF50', '#FFC107', '#2196F3'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        maintainAspectRatio: true
+                    }
+                });
+            }
+        });
+    }, 100);
+}
+
+// レシピ表示の更新
+const originalDisplayRecipes = displayRecipes;
+displayRecipes = function(searchTerm = '') {
+    originalDisplayRecipes(searchTerm);
+    drawNutritionCharts();
+};
 
 // 初期表示
 displayRecipes();

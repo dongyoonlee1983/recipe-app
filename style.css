@@ -443,3 +443,98 @@ header {
     margin-left: 10px;
     display: inline-block;
 }
+
+/* 栄養バランス表示 */
+.nutrition-info {
+    background-color: #E8F5E9;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+}
+
+.nutrition-info h5 {
+    color: #2E7D32;
+    margin-bottom: 10px;
+}
+
+.nutrition-values {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.nutrition-item {
+    text-align: center;
+    padding: 10px;
+    background-color: white;
+    border-radius: 5px;
+}
+
+.nutrition-item .label {
+    font-size: 12px;
+    color: #666;
+}
+
+.nutrition-item .value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+}
+
+.nutrition-item .unit {
+    font-size: 12px;
+    color: #999;
+}
+
+.nutrition-chart-container {
+    max-width: 200px;
+    margin: 0 auto;
+}
+
+/* 栄養バランス詳細モーダル */
+.nutrition-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.nutrition-modal.show {
+    display: flex;
+}
+
+.nutrition-modal-content {
+    background-color: white;
+    padding: 30px;
+    border-radius: 10px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.nutrition-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.nutrition-modal-header h3 {
+    color: #2E7D32;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+}
