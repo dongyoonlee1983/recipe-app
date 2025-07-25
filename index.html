@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>レシピアプリ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>私のレシピコレクション</h1>
+        </header>
+        
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="レシピを検索...">
+        </div>
+        
+        <button id="addRecipeBtn" class="add-btn">新しいレシピを追加</button>
+        
+        <div id="recipeForm" class="recipe-form hidden">
+            <h2>新しいレシピ</h2>
+            <input type="text" id="recipeName" placeholder="レシピ名">
+            <textarea id="recipeIngredients" placeholder="材料（改行で区切る）"></textarea>
+            <textarea id="recipeInstructions" placeholder="作り方"></textarea>
+            <button id="saveRecipeBtn">保存</button>
+            <button id="cancelBtn">キャンセル</button>
+        </div>
+        
+        <div id="recipeList" class="recipe-list"></div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
