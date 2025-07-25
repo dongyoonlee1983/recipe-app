@@ -160,3 +160,104 @@ header {
 .hidden {
     display: none;
 }
+
+/* カロリー計算機能のスタイル */
+.ingredients-section {
+    margin: 20px 0;
+}
+
+.ingredients-section h3 {
+    color: #4CAF50;
+    margin-bottom: 15px;
+}
+
+.ingredients-list {
+    margin-bottom: 15px;
+}
+
+.ingredient-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.ingredient-name {
+    flex: 3;
+    padding: 8px !important;
+}
+
+.ingredient-amount {
+    flex: 1;
+    padding: 8px !important;
+}
+
+.ingredient-unit {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.calorie-display {
+    flex: 1;
+    text-align: center;
+    color: #666;
+    font-weight: bold;
+}
+
+.remove-ingredient-btn {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.remove-ingredient-btn:hover {
+    background-color: #da190b;
+}
+
+.add-ingredient-btn {
+    background-color: #2196F3;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 15px;
+}
+
+.add-ingredient-btn:hover {
+    background-color: #1976D2;
+}
+
+.total-calories {
+    background-color: #f0f0f0;
+    padding: 15px;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+#servings {
+    width: 150px;
+    margin-bottom: 20px;
+}
+
+/* レシピカードのカロリー表示 */
+.recipe-calories {
+    background-color: #FFF3E0;
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+    text-align: center;
+    color: #E65100;
+    font-weight: bold;
+}
