@@ -10,6 +10,12 @@ const cancelBtn = document.getElementById('cancelBtn');
 const searchInput = document.getElementById('searchInput');
 const addIngredientBtn = document.getElementById('addIngredientBtn');
 const ingredientsList = document.getElementById('ingredientsList');
+const categoryFilter = document.getElementById('categoryFilter');
+const tagFilters = document.getElementById('tagFilters');
+
+// フィルター状態
+let selectedCategory = '';
+let selectedTags = [];
 
 // カロリー計算関数
 function updateCaloriesForRow(row) {
@@ -107,6 +113,31 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 人数変更時のカロリー再計算
     document.getElementById('servings').addEventListener('input', updateTotalCalories);
+    
+    // カテゴリーフィルター
+    categoryFilter.addEventListener('change', (e) => {
+        selectedCategory = e.target.value;
+        displayRecipes(searchInput.value);
+    });
+    
+    // タグフィルター
+    const tagButtons = tagFilters.querySelectorAll('.tag-filter');
+    tagButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            button.classList.toggle('active');
+            const tag = button.getAttribute('data-tag');
+            
+            if (button.classList.contains('active')) {
+                if (!selectedTags.includes(tag)) {
+                    selectedTags.push(tag);
+                }
+            } else {
+                selectedTags = selectedTags.filter(t => t !== tag);
+            }
+            
+            displayRecipes(searchInput.value);
+        });
+    });
 });
 
 // レシピフォームの表示/非表示
@@ -123,7 +154,12 @@ cancelBtn.addEventListener('click', () => {
 saveRecipeBtn.addEventListener('click', () => {
     const name = document.getElementById('recipeName').value;
     const servings = parseInt(document.getElementById('servings').value) || 1;
+    const category = document.getElementById('recipeCategory').value;
     const instructions = document.getElementById('recipeInstructions').value;
+    
+    // タグデータの収集
+    const tagCheckboxes = document.querySelectorAll('.tag-checkboxes input[type="checkbox"]:checked');
+    const tags = Array.from(tagCheckboxes).map(cb => cb.value);
     
     // 材料データの収集
     const ingredientRows = ingredientsList.querySelectorAll('.ingredient-row');
@@ -152,6 +188,8 @@ saveRecipeBtn.addEventListener('click', () => {
             id: Date.now(),
             name: name,
             servings: servings,
+            category: category,
+            tags: tags,
             ingredients: ingredients,
             instructions: instructions,
             totalCalories: totalCalories,
@@ -172,7 +210,12 @@ saveRecipeBtn.addEventListener('click', () => {
 function clearForm() {
     document.getElementById('recipeName').value = '';
     document.getElementById('servings').value = '2';
+    document.getElementById('recipeCategory').value = '和食';
     document.getElementById('recipeInstructions').value = '';
+    
+    // タグのチェックを外す
+    const tagCheckboxes = document.querySelectorAll('.tag-checkboxes input[type="checkbox"]');
+    tagCheckboxes.forEach(cb => cb.checked = false);
     
     // 材料リストを初期状態に戻す
     ingredientsList.innerHTML = `
@@ -217,10 +260,22 @@ function clearForm() {
 
 // レシピの表示
 function displayRecipes(searchTerm = '') {
-    const filteredRecipes = recipes.filter(recipe => 
+    let filteredRecipes = recipes.filter(recipe => 
         recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         recipe.ingredients.some(ing => ing.name.toLowerCase().includes(searchTerm.toLowerCase()))
     );
+    
+    // カテゴリーフィルター
+    if (selectedCategory) {
+        filteredRecipes = filteredRecipes.filter(recipe => recipe.category === selectedCategory);
+    }
+    
+    // タグフィルター
+    if (selectedTags.length > 0) {
+        filteredRecipes = filteredRecipes.filter(recipe => 
+            selectedTags.every(tag => recipe.tags && recipe.tags.includes(tag))
+        );
+    }
     
     recipeList.innerHTML = '';
     
@@ -232,9 +287,15 @@ function displayRecipes(searchTerm = '') {
             .map(ing => `<li>${ing.name} ${ing.amount}${ing.unit} (${ing.calories}kcal)</li>`)
             .join('');
         
+        const tagsHtml = recipe.tags && recipe.tags.length > 0 
+            ? `<div class="recipe-tags">${recipe.tags.map(tag => `<span class="recipe-tag">${tag}</span>`).join('')}</div>`
+            : '';
+        
         recipeCard.innerHTML = `
+            <span class="recipe-category-badge">${recipe.category || 'その他'}</span>
             <h3>${recipe.name}</h3>
             <p>${recipe.servings}人分</p>
+            ${tagsHtml}
             <h4>材料:</h4>
             <ul>${ingredientsList}</ul>
             <h4>作り方:</h4>
@@ -278,6 +339,8 @@ if (recipes.length === 0) {
             id: 1,
             name: "シンプルなトマトパスタ",
             servings: 2,
+            category: "イタリアン",
+            tags: ["時短"],
             ingredients: [
                 { name: "パスタ", amount: 200, unit: "g", calories: 330 },
                 { name: "トマト缶", amount: 1, unit: "缶", calories: 40 },
@@ -293,6 +356,8 @@ if (recipes.length === 0) {
             id: 2,
             name: "野菜たっぷりサラダ",
             servings: 2,
+            category: "洋食",
+            tags: ["ヘルシー", "時短"],
             ingredients: [
                 { name: "レタス", amount: 200, unit: "g", calories: 24 },
                 { name: "トマト", amount: 2, unit: "個", calories: 57 },

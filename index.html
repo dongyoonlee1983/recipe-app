@@ -16,12 +16,52 @@
             <input type="text" id="searchInput" placeholder="レシピを検索...">
         </div>
         
+        <div class="filter-container">
+            <select id="categoryFilter" class="category-filter">
+                <option value="">すべてのカテゴリー</option>
+                <option value="和食">和食</option>
+                <option value="洋食">洋食</option>
+                <option value="中華">中華</option>
+                <option value="イタリアン">イタリアン</option>
+                <option value="デザート">デザート</option>
+                <option value="その他">その他</option>
+            </select>
+            <div class="tag-filters" id="tagFilters">
+                <button class="tag-filter" data-tag="時短">時短</button>
+                <button class="tag-filter" data-tag="ヘルシー">ヘルシー</button>
+                <button class="tag-filter" data-tag="子供向け">子供向け</button>
+                <button class="tag-filter" data-tag="パーティー">パーティー</button>
+            </div>
+        </div>
+        
         <button id="addRecipeBtn" class="add-btn">新しいレシピを追加</button>
         
         <div id="recipeForm" class="recipe-form hidden">
             <h2>新しいレシピ</h2>
             <input type="text" id="recipeName" placeholder="レシピ名">
             <input type="number" id="servings" placeholder="何人分" min="1" value="2">
+            
+            <div class="category-section">
+                <label for="recipeCategory">カテゴリー：</label>
+                <select id="recipeCategory" class="recipe-category">
+                    <option value="和食">和食</option>
+                    <option value="洋食">洋食</option>
+                    <option value="中華">中華</option>
+                    <option value="イタリアン">イタリアン</option>
+                    <option value="デザート">デザート</option>
+                    <option value="その他">その他</option>
+                </select>
+            </div>
+            
+            <div class="tags-section">
+                <label>タグ（該当するものを選択）：</label>
+                <div class="tag-checkboxes">
+                    <label><input type="checkbox" value="時短"> 時短</label>
+                    <label><input type="checkbox" value="ヘルシー"> ヘルシー</label>
+                    <label><input type="checkbox" value="子供向け"> 子供向け</label>
+                    <label><input type="checkbox" value="パーティー"> パーティー</label>
+                </div>
+            </div>
             
             <div class="ingredients-section">
                 <h3>材料</h3>
