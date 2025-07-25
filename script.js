@@ -158,14 +158,6 @@ addRecipeBtn.addEventListener('click', () => {
     recipeForm.classList.remove('hidden');
 });
 
-// データリセットボタン
-const resetDataBtn = document.getElementById('resetDataBtn');
-resetDataBtn.addEventListener('click', () => {
-    if (confirm('すべてのデータをリセットして、サンプルレシピを表示しますか？')) {
-        localStorage.clear();
-        location.reload();
-    }
-});
 
 cancelBtn.addEventListener('click', () => {
     recipeForm.classList.add('hidden');
