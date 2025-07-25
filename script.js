@@ -16,6 +16,10 @@ const tagFilters = document.getElementById('tagFilters');
 // フィルター状態
 let selectedCategory = '';
 let selectedTags = [];
+let showFavoritesOnly = false;
+
+// お気に入りデータ
+let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
 
 // カロリー計算関数
 function updateCaloriesForRow(row) {
@@ -137,6 +141,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             displayRecipes(searchInput.value);
         });
+    });
+    
+    // お気に入りフィルター
+    const favoriteFilterBtn = document.getElementById('favoriteFilterBtn');
+    favoriteFilterBtn.addEventListener('click', () => {
+        favoriteFilterBtn.classList.toggle('active');
+        showFavoritesOnly = favoriteFilterBtn.classList.contains('active');
+        displayRecipes(searchInput.value);
+        updateFavoriteCount();
     });
 });
 
@@ -277,6 +290,11 @@ function displayRecipes(searchTerm = '') {
         );
     }
     
+    // お気に入りフィルター
+    if (showFavoritesOnly) {
+        filteredRecipes = filteredRecipes.filter(recipe => favorites.includes(recipe.id));
+    }
+    
     recipeList.innerHTML = '';
     
     filteredRecipes.forEach(recipe => {
@@ -291,7 +309,12 @@ function displayRecipes(searchTerm = '') {
             ? `<div class="recipe-tags">${recipe.tags.map(tag => `<span class="recipe-tag">${tag}</span>`).join('')}</div>`
             : '';
         
+        const isFavorited = favorites.includes(recipe.id);
+        
         recipeCard.innerHTML = `
+            <button class="favorite-btn ${isFavorited ? 'favorited' : ''}" onclick="toggleFavorite(${recipe.id})">
+                ♥
+            </button>
             <span class="recipe-category-badge">${recipe.category || 'その他'}</span>
             <h3>${recipe.name}</h3>
             <p>${recipe.servings}人分</p>
@@ -324,6 +347,40 @@ function saveToLocalStorage() {
     localStorage.setItem('recipes', JSON.stringify(recipes));
 }
 
+// お気に入りの切り替え
+function toggleFavorite(recipeId) {
+    const index = favorites.indexOf(recipeId);
+    if (index > -1) {
+        favorites.splice(index, 1);
+    } else {
+        favorites.push(recipeId);
+    }
+    
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+    displayRecipes(searchInput.value);
+    updateFavoriteCount();
+}
+
+// お気に入り数の更新
+function updateFavoriteCount() {
+    const favoriteFilterBtn = document.getElementById('favoriteFilterBtn');
+    const count = favorites.length;
+    
+    if (count > 0) {
+        if (!favoriteFilterBtn.querySelector('.favorite-count')) {
+            const countSpan = document.createElement('span');
+            countSpan.className = 'favorite-count';
+            favoriteFilterBtn.appendChild(countSpan);
+        }
+        favoriteFilterBtn.querySelector('.favorite-count').textContent = count;
+    } else {
+        const countSpan = favoriteFilterBtn.querySelector('.favorite-count');
+        if (countSpan) {
+            countSpan.remove();
+        }
+    }
+}
+
 // 検索機能
 searchInput.addEventListener('input', (e) => {
     displayRecipes(e.target.value);
@@ -331,6 +388,7 @@ searchInput.addEventListener('input', (e) => {
 
 // 初期表示
 displayRecipes();
+updateFavoriteCount();
 
 // サンプルレシピの追加（初回のみ）
 if (recipes.length === 0) {

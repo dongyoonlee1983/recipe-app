@@ -373,3 +373,73 @@ header {
     border-radius: 12px;
     font-size: 11px;
 }
+
+/* お気に入り機能 */
+.favorite-filter-btn {
+    padding: 8px 16px;
+    border: 2px solid #FF1744;
+    border-radius: 20px;
+    background-color: white;
+    color: #FF1744;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.favorite-filter-btn:hover {
+    background-color: #FFF0F3;
+}
+
+.favorite-filter-btn.active {
+    background-color: #FF1744;
+    color: white;
+}
+
+.heart-icon {
+    font-size: 16px;
+}
+
+.favorite-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: white;
+    border: 2px solid #FF1744;
+    color: #FF1744;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.favorite-btn:hover {
+    transform: scale(1.1);
+}
+
+.favorite-btn.favorited {
+    background-color: #FF1744;
+    color: white;
+}
+
+.recipe-card {
+    position: relative;
+}
+
+/* お気に入り数表示 */
+.favorite-count {
+    background-color: #FF1744;
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+    margin-left: 10px;
+    display: inline-block;
+}
