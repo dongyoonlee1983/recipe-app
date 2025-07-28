@@ -216,16 +216,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 既存レシピの栄養情報を更新
 function updateRecipeNutrition() {
+    console.log('Checking recipes:', recipes.length);
     let needsUpdate = false;
     
-    recipes.forEach(recipe => {
+    recipes.forEach((recipe, index) => {
+        console.log(`Recipe ${index}:`, recipe.name, 'Ingredients:', recipe.ingredients);
         if (recipe.ingredients) {
             // 各材料に栄養情報が不足していないかチェック
-            recipe.ingredients.forEach(ingredient => {
+            recipe.ingredients.forEach((ingredient, i) => {
+                console.log(`  Ingredient ${i}:`, ingredient);
                 if (!ingredient.nutrition) {
                     // 栄養情報を再計算
-                    ingredient.nutrition = calculateNutrition(ingredient.name, ingredient.amount, ingredient.unit);
+                    const calculatedNutrition = calculateNutrition(ingredient.name, ingredient.amount, ingredient.unit);
+                    ingredient.nutrition = calculatedNutrition;
+                    console.log(`  Calculated nutrition for ${ingredient.name}:`, calculatedNutrition);
                     needsUpdate = true;
+                } else {
+                    console.log(`  Existing nutrition for ${ingredient.name}:`, ingredient.nutrition);
                 }
             });
         }
@@ -234,6 +241,7 @@ function updateRecipeNutrition() {
     // 更新が必要な場合はLocalStorageに保存
     if (needsUpdate) {
         localStorage.setItem('recipes', JSON.stringify(recipes));
+        console.log('Updated recipes saved to localStorage');
     }
 }
 
@@ -1466,12 +1474,19 @@ function calculateDayNutrition(dateStr) {
         carbs: 0
     };
     
+    console.log(`Calculating nutrition for ${dateStr}, mealPlans:`, mealPlans[dateStr]);
+    
     if (mealPlans[dateStr]) {
         Object.values(mealPlans[dateStr]).forEach(meal => {
+            console.log('Processing meal:', meal);
             const recipe = recipes.find(r => r.id === meal.recipeId);
+            console.log('Found recipe:', recipe ? recipe.name : 'not found');
             if (recipe && recipe.ingredients) {
+                console.log('Recipe ingredients:', recipe.ingredients);
                 const nutrition = calculateTotalNutrition(recipe.ingredients);
+                console.log('Total nutrition calculated:', nutrition);
                 const servings = recipe.servings || 1;
+                console.log('Servings:', servings);
                 
                 dayNutrition.calories += (nutrition.calories || 0) / servings;
                 dayNutrition.protein += (nutrition.protein || 0) / servings;
@@ -1481,11 +1496,13 @@ function calculateDayNutrition(dateStr) {
         });
     }
     
+    console.log('Final day nutrition:', dayNutrition);
     return dayNutrition;
 }
 
 // 合計栄養素の計算
 function calculateTotalNutrition(ingredients) {
+    console.log('calculateTotalNutrition called with:', ingredients);
     let totalNutrition = {
         calories: 0,
         protein: 0,
@@ -1493,15 +1510,20 @@ function calculateTotalNutrition(ingredients) {
         carbs: 0
     };
     
-    ingredients.forEach(ingredient => {
+    ingredients.forEach((ingredient, index) => {
+        console.log(`Ingredient ${index}:`, ingredient);
         if (ingredient.nutrition) {
+            console.log(`  Adding nutrition:`, ingredient.nutrition);
             totalNutrition.calories += ingredient.nutrition.calories || 0;
             totalNutrition.protein += ingredient.nutrition.protein || 0;
             totalNutrition.fat += ingredient.nutrition.fat || 0;
             totalNutrition.carbs += ingredient.nutrition.carbs || 0;
+        } else {
+            console.log(`  No nutrition data for:`, ingredient.name);
         }
     });
     
+    console.log('Total nutrition result:', totalNutrition);
     return totalNutrition;
 }
 
