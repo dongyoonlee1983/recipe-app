@@ -1,5 +1,6 @@
 // レシピデータを保存する配列
 let recipes = JSON.parse(localStorage.getItem('recipes')) || [];
+let editingRecipeId = null;
 
 // DOM要素の取得
 const recipeList = document.getElementById('recipeList');
@@ -161,6 +162,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // レシピフォームの表示/非表示
 addRecipeBtn.addEventListener('click', () => {
+    editingRecipeId = null;
+    document.getElementById('formTitle').textContent = '新しいレシピ';
     recipeForm.classList.remove('hidden');
 });
 
@@ -224,20 +227,41 @@ saveRecipeBtn.addEventListener('click', () => {
     });
     
     if (name && ingredients.length > 0 && instructions) {
-        const recipe = {
-            id: Date.now(),
-            name: name,
-            servings: servings,
-            category: category,
-            tags: tags,
-            ingredients: ingredients,
-            instructions: instructions,
-            totalCalories: totalCalories,
-            caloriesPerServing: Math.round(totalCalories / servings),
-            image: previewImg.src || null
-        };
+        if (editingRecipeId) {
+            // 編集モード
+            const index = recipes.findIndex(r => r.id === editingRecipeId);
+            if (index !== -1) {
+                recipes[index] = {
+                    id: editingRecipeId,
+                    name: name,
+                    servings: servings,
+                    category: category,
+                    tags: tags,
+                    ingredients: ingredients,
+                    instructions: instructions,
+                    totalCalories: totalCalories,
+                    caloriesPerServing: Math.round(totalCalories / servings),
+                    image: previewImg.src || null
+                };
+            }
+            editingRecipeId = null;
+        } else {
+            // 新規作成モード
+            const recipe = {
+                id: Date.now(),
+                name: name,
+                servings: servings,
+                category: category,
+                tags: tags,
+                ingredients: ingredients,
+                instructions: instructions,
+                totalCalories: totalCalories,
+                caloriesPerServing: Math.round(totalCalories / servings),
+                image: previewImg.src || null
+            };
+            recipes.push(recipe);
+        }
         
-        recipes.push(recipe);
         saveToLocalStorage();
         displayRecipes();
         recipeForm.classList.add('hidden');
@@ -249,6 +273,7 @@ saveRecipeBtn.addEventListener('click', () => {
 
 // フォームのクリア
 function clearForm() {
+    editingRecipeId = null;
     document.getElementById('recipeName').value = '';
     document.getElementById('servings').value = '2';
     document.getElementById('recipeCategory').value = '和食';
@@ -365,7 +390,10 @@ function displayRecipes(searchTerm = '') {
                 合計: ${recipe.totalCalories} kcal | 1人分: ${recipe.caloriesPerServing} kcal
             </div>
             ${getNutritionHTML(recipe)}
-            <button class="delete-btn" onclick="deleteRecipe(${recipe.id})">削除</button>
+            <div class="recipe-actions">
+                <button class="edit-btn" onclick="editRecipe(${recipe.id})">編集</button>
+                <button class="delete-btn" onclick="deleteRecipe(${recipe.id})">削除</button>
+            </div>
         `;
         
         recipeList.appendChild(recipeCard);
@@ -379,6 +407,86 @@ function deleteRecipe(id) {
         saveToLocalStorage();
         displayRecipes();
     }
+}
+
+// レシピ編集
+function editRecipe(id) {
+    const recipe = recipes.find(r => r.id === id);
+    if (!recipe) return;
+    
+    editingRecipeId = id;
+    document.getElementById('formTitle').textContent = 'レシピを編集';
+    
+    // フォームに既存のデータを設定
+    document.getElementById('recipeName').value = recipe.name;
+    document.getElementById('servings').value = recipe.servings;
+    document.getElementById('recipeCategory').value = recipe.category;
+    document.getElementById('recipeInstructions').value = recipe.instructions;
+    
+    // タグの設定
+    const tagCheckboxes = document.querySelectorAll('.tag-checkboxes input[type="checkbox"]');
+    tagCheckboxes.forEach(cb => {
+        cb.checked = recipe.tags && recipe.tags.includes(cb.value);
+    });
+    
+    // 画像の設定
+    if (recipe.image) {
+        previewImg.src = recipe.image;
+        imagePreview.classList.remove('hidden');
+    } else {
+        previewImg.src = '';
+        imagePreview.classList.add('hidden');
+    }
+    
+    // 材料リストの設定
+    ingredientsList.innerHTML = '';
+    recipe.ingredients.forEach(ingredient => {
+        const newRow = document.createElement('div');
+        newRow.className = 'ingredient-row';
+        newRow.innerHTML = `
+            <input type="text" class="ingredient-name" placeholder="材料名" value="${ingredient.name}">
+            <input type="number" class="ingredient-amount" placeholder="数量" step="0.1" value="${ingredient.amount}">
+            <select class="ingredient-unit">
+                <option value="g">g</option>
+                <option value="個">個</option>
+                <option value="本">本</option>
+                <option value="枚">枚</option>
+                <option value="合">合</option>
+                <option value="カップ">カップ</option>
+                <option value="ml">ml</option>
+                <option value="束">束</option>
+                <option value="袋">袋</option>
+                <option value="缶">缶</option>
+                <option value="パック">パック</option>
+                <option value="大さじ">大さじ</option>
+                <option value="小さじ">小さじ</option>
+            </select>
+            <span class="calorie-display">${ingredient.calories || 0} kcal</span>
+            <button class="remove-ingredient-btn">×</button>
+        `;
+        
+        // 単位を設定
+        const unitSelect = newRow.querySelector('.ingredient-unit');
+        unitSelect.value = ingredient.unit;
+        
+        // イベントリスナーの追加
+        const nameInput = newRow.querySelector('.ingredient-name');
+        const amountInput = newRow.querySelector('.ingredient-amount');
+        const removeBtn = newRow.querySelector('.remove-ingredient-btn');
+        
+        nameInput.addEventListener('input', () => updateCaloriesForRow(newRow));
+        amountInput.addEventListener('input', () => updateCaloriesForRow(newRow));
+        unitSelect.addEventListener('change', () => updateCaloriesForRow(newRow));
+        removeBtn.addEventListener('click', () => {
+            newRow.remove();
+            updateTotalCalories();
+        });
+        
+        ingredientsList.appendChild(newRow);
+    });
+    
+    updateTotalCalories();
+    recipeForm.classList.remove('hidden');
 }
 
 // LocalStorageに保存
