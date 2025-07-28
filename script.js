@@ -210,6 +210,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof window.nutritionDatabase !== 'undefined' || typeof nutritionDatabase !== 'undefined') {
         updateRecipeNutrition(); // 既存レシピの栄養情報を更新
     }
+    
+    // デバッグ: 最初のレシピのデータ形式を確認
+    if (recipes.length > 0) {
+        console.log('Sample recipe data:', recipes[0]);
+        if (recipes[0].ingredients && recipes[0].ingredients.length > 0) {
+            console.log('Sample ingredient:', recipes[0].ingredients[0]);
+        }
+    }
+    
     updateCategorySelects();
     displayRecipes();
     loadSharedRecipe(); // 共有レシピの確認
@@ -1481,6 +1490,13 @@ function calculateDayNutrition(dateStr) {
                 dayNutrition.carbs += (nutrition.carbs || 0) / servings;
             }
         });
+    }
+    
+    // デバッグ: 計算結果が0の場合のみログ出力
+    if (dayNutrition.calories === 0 && mealPlans[dateStr] && Object.keys(mealPlans[dateStr]).length > 0) {
+        console.log('Warning: Nutrition calculation returned 0 for date:', dateStr);
+        console.log('Meal plans for this date:', mealPlans[dateStr]);
+        console.log('First recipe found:', recipes.find(r => r.id == Object.values(mealPlans[dateStr])[0]?.recipeId));
     }
     
     return dayNutrition;
