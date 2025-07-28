@@ -226,7 +226,6 @@ function updateRecipeNutrition() {
                     // 栄養情報を再計算
                     ingredient.nutrition = calculateNutrition(ingredient.name, ingredient.amount, ingredient.unit);
                     needsUpdate = true;
-                    console.log('Updated nutrition for:', ingredient.name, ingredient.nutrition);
                 }
             });
         }
@@ -235,7 +234,6 @@ function updateRecipeNutrition() {
     // 更新が必要な場合はLocalStorageに保存
     if (needsUpdate) {
         localStorage.setItem('recipes', JSON.stringify(recipes));
-        console.log('Recipe nutrition data updated and saved');
     }
 }
 
@@ -1472,9 +1470,7 @@ function calculateDayNutrition(dateStr) {
         Object.values(mealPlans[dateStr]).forEach(meal => {
             const recipe = recipes.find(r => r.id === meal.recipeId);
             if (recipe && recipe.ingredients) {
-                console.log('Recipe found:', recipe.name, 'Ingredients:', recipe.ingredients);
                 const nutrition = calculateTotalNutrition(recipe.ingredients);
-                console.log('Calculated nutrition:', nutrition);
                 const servings = recipe.servings || 1;
                 
                 dayNutrition.calories += (nutrition.calories || 0) / servings;
@@ -1485,7 +1481,6 @@ function calculateDayNutrition(dateStr) {
         });
     }
     
-    console.log('Day nutrition for', dateStr, ':', dayNutrition);
     return dayNutrition;
 }
 
