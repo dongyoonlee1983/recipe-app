@@ -207,11 +207,37 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 初期化処理
+    updateRecipeNutrition(); // 既存レシピの栄養情報を更新
     updateCategorySelects();
     displayRecipes();
     loadSharedRecipe(); // 共有レシピの確認
     initializeRecommendedPlans(); // オススメ献立の初期化
 });
+
+// 既存レシピの栄養情報を更新
+function updateRecipeNutrition() {
+    let needsUpdate = false;
+    
+    recipes.forEach(recipe => {
+        if (recipe.ingredients) {
+            // 各材料に栄養情報が不足していないかチェック
+            recipe.ingredients.forEach(ingredient => {
+                if (!ingredient.nutrition) {
+                    // 栄養情報を再計算
+                    ingredient.nutrition = calculateNutrition(ingredient.name, ingredient.amount, ingredient.unit);
+                    needsUpdate = true;
+                    console.log('Updated nutrition for:', ingredient.name, ingredient.nutrition);
+                }
+            });
+        }
+    });
+    
+    // 更新が必要な場合はLocalStorageに保存
+    if (needsUpdate) {
+        localStorage.setItem('recipes', JSON.stringify(recipes));
+        console.log('Recipe nutrition data updated and saved');
+    }
+}
 
 // レシピフォームの表示/非表示
 addRecipeBtn.addEventListener('click', () => {
