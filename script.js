@@ -207,7 +207,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 初期化処理
-    updateRecipeNutrition(); // 既存レシピの栄養情報を更新
+    console.log('Checking if nutritionDatabase is available:', typeof nutritionDatabase);
+    if (typeof nutritionDatabase !== 'undefined') {
+        updateRecipeNutrition(); // 既存レシピの栄養情報を更新
+    } else {
+        console.error('nutritionDatabase is not loaded!');
+    }
     updateCategorySelects();
     displayRecipes();
     loadSharedRecipe(); // 共有レシピの確認

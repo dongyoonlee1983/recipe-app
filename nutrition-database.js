@@ -80,6 +80,13 @@ for (const [food, nutrition] of Object.entries(nutritionDatabase)) {
 // 栄養素計算関数
 function calculateNutrition(ingredient, amount, unit = "g") {
     console.log(`Calculating nutrition for: "${ingredient}", amount: ${amount}, unit: ${unit}`);
+    
+    // nutritionDatabaseが利用可能かチェック
+    if (typeof nutritionDatabase === 'undefined') {
+        console.error('nutritionDatabase is not available in calculateNutrition');
+        return { calories: 0, protein: 0, fat: 0, carbs: 0 };
+    }
+    
     const normalizedIngredient = ingredient.trim();
     let weightInGrams = amount;
     
