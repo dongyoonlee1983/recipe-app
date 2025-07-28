@@ -13,6 +13,12 @@ const ingredientsList = document.getElementById('ingredientsList');
 const categoryFilter = document.getElementById('categoryFilter');
 const tagFilters = document.getElementById('tagFilters');
 
+// 画像アップロード要素
+const recipeImageInput = document.getElementById('recipeImage');
+const imagePreview = document.getElementById('imagePreview');
+const previewImg = document.getElementById('previewImg');
+const removeImageBtn = document.getElementById('removeImageBtn');
+
 // フィルター状態
 let selectedCategory = '';
 let selectedTags = [];
@@ -158,6 +164,24 @@ addRecipeBtn.addEventListener('click', () => {
     recipeForm.classList.remove('hidden');
 });
 
+// 画像アップロードのイベントリスナー
+recipeImageInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            previewImg.src = e.target.result;
+            imagePreview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+removeImageBtn.addEventListener('click', () => {
+    recipeImageInput.value = '';
+    previewImg.src = '';
+    imagePreview.classList.add('hidden');
+});
 
 cancelBtn.addEventListener('click', () => {
     recipeForm.classList.add('hidden');
@@ -209,7 +233,8 @@ saveRecipeBtn.addEventListener('click', () => {
             ingredients: ingredients,
             instructions: instructions,
             totalCalories: totalCalories,
-            caloriesPerServing: Math.round(totalCalories / servings)
+            caloriesPerServing: Math.round(totalCalories / servings),
+            image: previewImg.src || null
         };
         
         recipes.push(recipe);
@@ -232,6 +257,11 @@ function clearForm() {
     // タグのチェックを外す
     const tagCheckboxes = document.querySelectorAll('.tag-checkboxes input[type="checkbox"]');
     tagCheckboxes.forEach(cb => cb.checked = false);
+    
+    // 画像をクリア
+    recipeImageInput.value = '';
+    previewImg.src = '';
+    imagePreview.classList.add('hidden');
     
     // 材料リストを初期状態に戻す
     ingredientsList.innerHTML = `
@@ -302,7 +332,7 @@ function displayRecipes(searchTerm = '') {
     
     filteredRecipes.forEach(recipe => {
         const recipeCard = document.createElement('div');
-        recipeCard.className = 'recipe-card';
+        recipeCard.className = recipe.image ? 'recipe-card has-image' : 'recipe-card';
         
         const ingredientsList = recipe.ingredients
             .map(ing => `<li>${ing.name} ${ing.amount}${ing.unit} (${ing.calories}kcal)</li>`)
@@ -314,10 +344,15 @@ function displayRecipes(searchTerm = '') {
         
         const isFavorited = favorites.includes(recipe.id);
         
+        const imageHtml = recipe.image 
+            ? `<img src="${recipe.image}" alt="${recipe.name}" class="recipe-image">` 
+            : '';
+        
         recipeCard.innerHTML = `
             <button class="favorite-btn ${isFavorited ? 'favorited' : ''}" onclick="toggleFavorite(${recipe.id})">
                 ♥
             </button>
+            ${imageHtml}
             <span class="recipe-category-badge">${recipe.category || 'その他'}</span>
             <h3>${recipe.name}</h3>
             <p>${recipe.servings}人分</p>
@@ -961,11 +996,17 @@ function openRecipeSelector(date, mealType) {
     
     const recipeListHTML = recipes.map(recipe => {
         const totalNutrition = calculateTotalNutrition(recipe.ingredients);
+        const imageHtml = recipe.image 
+            ? `<img src="${recipe.image}" alt="${recipe.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; margin-right: 10px;">` 
+            : '';
         return `
-            <div class="recipe-select-item" onclick="selectRecipeForMeal('${date}', '${mealType}', ${recipe.id})">
-                <div class="recipe-select-name">${recipe.name}</div>
-                <div class="recipe-select-info">
-                    ${recipe.category} • ${recipe.caloriesPerServing || 0} kcal/人分
+            <div class="recipe-select-item" onclick="selectRecipeForMeal('${date}', '${mealType}', ${recipe.id})" style="display: flex; align-items: center;">
+                ${imageHtml}
+                <div>
+                    <div class="recipe-select-name">${recipe.name}</div>
+                    <div class="recipe-select-info">
+                        ${recipe.category} • ${recipe.caloriesPerServing || 0} kcal/人分
+                    </div>
                 </div>
             </div>
         `;

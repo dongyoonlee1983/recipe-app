@@ -98,6 +98,15 @@
                 </div>
             </div>
             
+            <div class="image-upload-section">
+                <label for="recipeImage">レシピの写真：</label>
+                <input type="file" id="recipeImage" accept="image/*" class="image-input">
+                <div id="imagePreview" class="image-preview hidden">
+                    <img id="previewImg" src="" alt="プレビュー">
+                    <button id="removeImageBtn" class="remove-image-btn">×</button>
+                </div>
+            </div>
+            
             <textarea id="recipeInstructions" placeholder="作り方"></textarea>
             <button id="saveRecipeBtn">保存</button>
             <button id="cancelBtn">キャンセル</button>
