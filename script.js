@@ -2,6 +2,10 @@
 let recipes = JSON.parse(localStorage.getItem('recipes')) || [];
 let editingRecipeId = null;
 
+// カテゴリーのデフォルトリスト
+const defaultCategories = ['和食', '洋食', '中華', 'イタリアン', 'デザート', 'その他'];
+let customCategories = JSON.parse(localStorage.getItem('customCategories')) || [];
+
 // DOM要素の取得
 const recipeList = document.getElementById('recipeList');
 const recipeForm = document.getElementById('recipeForm');
@@ -19,6 +23,7 @@ const recipeImageInput = document.getElementById('recipeImage');
 const imagePreview = document.getElementById('imagePreview');
 const previewImg = document.getElementById('previewImg');
 const removeImageBtn = document.getElementById('removeImageBtn');
+const addCategoryBtn = document.getElementById('addCategoryBtn');
 
 // フィルター状態
 let selectedCategory = '';
@@ -184,6 +189,11 @@ removeImageBtn.addEventListener('click', () => {
     recipeImageInput.value = '';
     previewImg.src = '';
     imagePreview.classList.add('hidden');
+});
+
+// カテゴリー追加ボタン
+addCategoryBtn.addEventListener('click', () => {
+    openCategoryModal();
 });
 
 cancelBtn.addEventListener('click', () => {
@@ -492,6 +502,34 @@ function editRecipe(id) {
 // LocalStorageに保存
 function saveToLocalStorage() {
     localStorage.setItem('recipes', JSON.stringify(recipes));
+    localStorage.setItem('customCategories', JSON.stringify(customCategories));
+}
+
+// カテゴリーの取得（デフォルト＋カスタム）
+function getAllCategories() {
+    return [...defaultCategories, ...customCategories];
+}
+
+// カテゴリーセレクトボックスを更新
+function updateCategorySelects() {
+    const allCategories = getAllCategories();
+    
+    // レシピフォームのカテゴリー選択
+    const recipeCategory = document.getElementById('recipeCategory');
+    const currentValue = recipeCategory.value;
+    recipeCategory.innerHTML = allCategories.map(cat => 
+        `<option value="${cat}">${cat}</option>`
+    ).join('');
+    recipeCategory.value = currentValue || '和食';
+    
+    // フィルターのカテゴリー選択
+    const categoryFilter = document.getElementById('categoryFilter');
+    const filterValue = categoryFilter.value;
+    categoryFilter.innerHTML = `
+        <option value="">すべてのカテゴリー</option>
+        ${allCategories.map(cat => `<option value="${cat}">${cat}</option>`).join('')}
+    `;
+    categoryFilter.value = filterValue;
 }
 
 // お気に入りの切り替え
@@ -1256,4 +1294,80 @@ prevWeekBtn.addEventListener('click', () => {
 nextWeekBtn.addEventListener('click', () => {
     currentWeekStart.setDate(currentWeekStart.getDate() + 7);
     renderWeekCalendar();
+});
+
+// カテゴリー管理モーダルを開く
+function openCategoryModal() {
+    const modal = document.createElement('div');
+    modal.className = 'category-modal';
+    modal.id = 'categoryModal';
+    
+    const customCategoriesHTML = customCategories.map(cat => `
+        <div class="custom-category-item">
+            <span>${cat}</span>
+            <button class="remove-category-btn" onclick="removeCategory('${cat}')">削除</button>
+        </div>
+    `).join('');
+    
+    modal.innerHTML = `
+        <div class="category-modal-content">
+            <div class="category-modal-header">
+                <h3>カテゴリー管理</h3>
+                <button class="close-modal" onclick="closeCategoryModal()">×</button>
+            </div>
+            
+            <input type="text" id="newCategoryInput" class="new-category-input" placeholder="新しいカテゴリー名">
+            <button class="add-new-category-btn" onclick="addNewCategory()">カテゴリーを追加</button>
+            
+            ${customCategories.length > 0 ? `
+                <div class="custom-categories-list">
+                    <h4>カスタムカテゴリー</h4>
+                    ${customCategoriesHTML}
+                </div>
+            ` : ''}
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+// カテゴリーモーダルを閉じる
+function closeCategoryModal() {
+    const modal = document.getElementById('categoryModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// 新しいカテゴリーを追加
+function addNewCategory() {
+    const input = document.getElementById('newCategoryInput');
+    const categoryName = input.value.trim();
+    
+    if (categoryName && !getAllCategories().includes(categoryName)) {
+        customCategories.push(categoryName);
+        saveToLocalStorage();
+        updateCategorySelects();
+        closeCategoryModal();
+        openCategoryModal(); // モーダルを再表示して更新された状態を表示
+    } else if (getAllCategories().includes(categoryName)) {
+        alert('このカテゴリーは既に存在します。');
+    }
+}
+
+// カスタムカテゴリーを削除
+function removeCategory(categoryName) {
+    if (confirm(`「${categoryName}」カテゴリーを削除しますか？`)) {
+        customCategories = customCategories.filter(cat => cat !== categoryName);
+        saveToLocalStorage();
+        updateCategorySelects();
+        closeCategoryModal();
+        openCategoryModal(); // モーダルを再表示して更新された状態を表示
+    }
+}
+
+// 初期化処理
+document.addEventListener('DOMContentLoaded', () => {
+    updateCategorySelects();
+    displayRecipes();
 });

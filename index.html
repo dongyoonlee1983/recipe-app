@@ -52,14 +52,17 @@
             
             <div class="category-section">
                 <label for="recipeCategory">カテゴリー：</label>
-                <select id="recipeCategory" class="recipe-category">
-                    <option value="和食">和食</option>
-                    <option value="洋食">洋食</option>
-                    <option value="中華">中華</option>
-                    <option value="イタリアン">イタリアン</option>
-                    <option value="デザート">デザート</option>
-                    <option value="その他">その他</option>
-                </select>
+                <div class="category-input-wrapper">
+                    <select id="recipeCategory" class="recipe-category">
+                        <option value="和食">和食</option>
+                        <option value="洋食">洋食</option>
+                        <option value="中華">中華</option>
+                        <option value="イタリアン">イタリアン</option>
+                        <option value="デザート">デザート</option>
+                        <option value="その他">その他</option>
+                    </select>
+                    <button type="button" id="addCategoryBtn" class="add-category-btn">+</button>
+                </div>
             </div>
             
             <div class="tags-section">
