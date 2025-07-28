@@ -43,7 +43,14 @@
         </div>
         
         <div id="recipesView" class="view-container">
-            <button id="addRecipeBtn" class="add-btn">新しいレシピを追加</button>
+            <div class="recipe-controls">
+                <button id="addRecipeBtn" class="add-btn">新しいレシピを追加</button>
+                <div class="import-export-controls">
+                    <button id="exportBtn" class="control-btn">エクスポート</button>
+                    <label for="importFile" class="control-btn import-label">インポート</label>
+                    <input type="file" id="importFile" accept=".json" style="display: none;">
+                </div>
+            </div>
         
         <div id="recipeForm" class="recipe-form hidden">
             <h2 id="formTitle">新しいレシピ</h2>

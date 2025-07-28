@@ -25,6 +25,10 @@ const previewImg = document.getElementById('previewImg');
 const removeImageBtn = document.getElementById('removeImageBtn');
 const addCategoryBtn = document.getElementById('addCategoryBtn');
 
+// エクスポート/インポート要素
+const exportBtn = document.getElementById('exportBtn');
+const importFile = document.getElementById('importFile');
+
 // フィルター状態
 let selectedCategory = '';
 let selectedTags = [];
@@ -194,6 +198,16 @@ removeImageBtn.addEventListener('click', () => {
 // カテゴリー追加ボタン
 addCategoryBtn.addEventListener('click', () => {
     openCategoryModal();
+});
+
+// エクスポートボタン
+exportBtn.addEventListener('click', () => {
+    exportRecipes();
+});
+
+// インポートファイル
+importFile.addEventListener('change', (e) => {
+    importRecipes(e);
 });
 
 cancelBtn.addEventListener('click', () => {
@@ -401,6 +415,7 @@ function displayRecipes(searchTerm = '') {
             </div>
             ${getNutritionHTML(recipe)}
             <div class="recipe-actions">
+                <button class="share-btn" onclick="shareRecipe(${recipe.id})">共有</button>
                 <button class="edit-btn" onclick="editRecipe(${recipe.id})">編集</button>
                 <button class="delete-btn" onclick="deleteRecipe(${recipe.id})">削除</button>
             </div>
@@ -1366,8 +1381,179 @@ function removeCategory(categoryName) {
     }
 }
 
+// エクスポート機能
+function exportRecipes() {
+    const exportData = {
+        recipes: recipes,
+        customCategories: customCategories,
+        favorites: favorites,
+        exportDate: new Date().toISOString(),
+        version: "1.0"
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = `recipes_export_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    alert('レシピデータをエクスポートしました！');
+}
+
+// インポート機能
+function importRecipes(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importData = JSON.parse(e.target.result);
+            
+            if (importData.recipes && Array.isArray(importData.recipes)) {
+                if (confirm(`${importData.recipes.length}個のレシピをインポートしますか？\n※既存のデータは保持されます`)) {
+                    // 既存のIDと重複しないよう新しいIDを生成
+                    const maxId = Math.max(...recipes.map(r => r.id), 0);
+                    let newId = maxId + 1;
+                    
+                    importData.recipes.forEach(recipe => {
+                        recipe.id = newId++;
+                        recipes.push(recipe);
+                    });
+                    
+                    // カスタムカテゴリーもインポート
+                    if (importData.customCategories && Array.isArray(importData.customCategories)) {
+                        importData.customCategories.forEach(cat => {
+                            if (!customCategories.includes(cat)) {
+                                customCategories.push(cat);
+                            }
+                        });
+                    }
+                    
+                    saveToLocalStorage();
+                    updateCategorySelects();
+                    displayRecipes();
+                    alert('レシピデータをインポートしました！');
+                } else {
+                    alert('インポートをキャンセルしました。');
+                }
+            } else {
+                alert('無効なファイル形式です。');
+            }
+        } catch (error) {
+            alert('ファイルの読み込みに失敗しました。');
+        }
+        
+        // ファイル入力をリセット
+        event.target.value = '';
+    };
+    
+    reader.readAsText(file);
+}
+
+// レシピ共有機能
+function shareRecipe(recipeId) {
+    const recipe = recipes.find(r => r.id === recipeId);
+    if (!recipe) return;
+    
+    // レシピデータをBase64エンコード
+    const recipeData = {
+        recipe: recipe,
+        timestamp: new Date().toISOString()
+    };
+    
+    const encodedData = btoa(encodeURIComponent(JSON.stringify(recipeData)));
+    const shareUrl = `${window.location.origin}${window.location.pathname}#recipe=${encodedData}`;
+    
+    openShareModal(recipe, shareUrl);
+}
+
+// 共有モーダルを開く
+function openShareModal(recipe, shareUrl) {
+    const modal = document.createElement('div');
+    modal.className = 'share-modal';
+    modal.id = 'shareModal';
+    
+    modal.innerHTML = `
+        <div class="share-modal-content">
+            <div class="share-modal-header">
+                <h3>「${recipe.name}」を共有</h3>
+                <button class="close-modal" onclick="closeShareModal()">×</button>
+            </div>
+            
+            <div class="share-url-container">
+                <input type="text" class="share-url-input" value="${shareUrl}" readonly>
+                <button class="copy-url-btn" onclick="copyShareUrl('${shareUrl}')">コピー</button>
+            </div>
+            
+            <div class="share-info">
+                このURLを共有すると、相手がレシピを閲覧・インポートできます。
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+// 共有モーダルを閉じる
+function closeShareModal() {
+    const modal = document.getElementById('shareModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// 共有URLをコピー
+function copyShareUrl(url) {
+    navigator.clipboard.writeText(url).then(() => {
+        alert('URLをコピーしました！');
+    }).catch(() => {
+        // フォールバック: テキストエリアを使用
+        const textArea = document.createElement('textarea');
+        textArea.value = url;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('URLをコピーしました！');
+    });
+}
+
+// 共有レシピの読み込み
+function loadSharedRecipe() {
+    const hash = window.location.hash;
+    if (hash.startsWith('#recipe=')) {
+        try {
+            const encodedData = hash.substring(8);
+            const decodedData = JSON.parse(decodeURIComponent(atob(encodedData)));
+            const sharedRecipe = decodedData.recipe;
+            
+            if (confirm(`共有されたレシピ「${sharedRecipe.name}」をインポートしますか？`)) {
+                // 新しいIDを生成
+                const maxId = Math.max(...recipes.map(r => r.id), 0);
+                sharedRecipe.id = maxId + 1;
+                
+                recipes.push(sharedRecipe);
+                saveToLocalStorage();
+                displayRecipes();
+                alert(`「${sharedRecipe.name}」をインポートしました！`);
+                
+                // URLのハッシュをクリア
+                window.location.hash = '';
+            }
+        } catch (error) {
+            console.error('共有レシピの読み込みに失敗:', error);
+        }
+    }
+}
+
 // 初期化処理
 document.addEventListener('DOMContentLoaded', () => {
     updateCategorySelects();
     displayRecipes();
+    loadSharedRecipe(); // 共有レシピの確認
 });
