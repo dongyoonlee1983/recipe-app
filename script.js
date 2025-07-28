@@ -1484,7 +1484,9 @@ function calculateDayNutrition(dateStr) {
     if (mealPlans[dateStr]) {
         Object.values(mealPlans[dateStr]).forEach(meal => {
             console.log('Processing meal:', meal);
-            const recipe = recipes.find(r => r.id === meal.recipeId);
+            console.log('Looking for recipe ID:', meal.recipeId, '(type:', typeof meal.recipeId, ')');
+            console.log('Available recipe IDs:', recipes.map(r => `${r.id}(${typeof r.id})`));
+            const recipe = recipes.find(r => r.id == meal.recipeId); // == instead of === for type coercion
             console.log('Found recipe:', recipe ? recipe.name : 'not found');
             if (recipe && recipe.ingredients) {
                 console.log('Recipe ingredients:', recipe.ingredients);
