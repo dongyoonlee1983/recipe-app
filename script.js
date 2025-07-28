@@ -1212,6 +1212,9 @@ function renderWeekCalendar() {
         const dayColumn = document.createElement('div');
         dayColumn.className = 'day-column';
         
+        // 1日分の栄養サマリーを計算
+        const dayNutrition = calculateDayNutrition(dateStr);
+        
         dayColumn.innerHTML = `
             <div class="day-header ${selectedDay === dateStr ? 'selected' : ''}" onclick="selectDay('${dateStr}')">
                 ${weekDays[i]}
@@ -1242,6 +1245,15 @@ function renderWeekCalendar() {
                         ${renderMealContent(dateStr, 'snack')}
                     </div>
                 </div>
+                <div class="day-nutrition-summary">
+                    <div class="day-nutrition-title">1日の合計</div>
+                    <div class="day-nutrition-values">
+                        <span class="nutrition-compact">カロリー: ${Math.round(dayNutrition.calories)}kcal</span>
+                        <span class="nutrition-compact">P: ${Math.round(dayNutrition.protein)}g</span>
+                        <span class="nutrition-compact">F: ${Math.round(dayNutrition.fat)}g</span>
+                        <span class="nutrition-compact">C: ${Math.round(dayNutrition.carbs)}g</span>
+                    </div>
+                </div>
             </div>
         `;
         
@@ -1252,8 +1264,6 @@ function renderWeekCalendar() {
     updateWeeklyNutritionSummary();
     // 買い物リストを更新
     updateShoppingList();
-    // 1日の栄養サマリーを更新
-    updateDailyNutritionSummary();
 }
 
 // 食事内容のレンダリング
@@ -1372,43 +1382,22 @@ function updateWeeklyNutritionSummary() {
     let totalProtein = 0;
     let totalFat = 0;
     let totalCarbs = 0;
-    let mealCount = 0;
     let daysWithMeals = 0;
     
-    // 現在の週の7日間を集計
+    // 現在の週の7日間を集計（新しいcalculateDayNutrition関数を使用）
     for (let i = 0; i < 7; i++) {
         const date = new Date(currentWeekStart);
         date.setDate(date.getDate() + i);
         const dateStr = formatDate(date);
         
-        let dayCalories = 0;
-        let dayProtein = 0;
-        let dayFat = 0;
-        let dayCarbs = 0;
-        let dayMealCount = 0;
+        const dayNutrition = calculateDayNutrition(dateStr);
         
-        if (mealPlans[dateStr]) {
-            Object.values(mealPlans[dateStr]).forEach(meal => {
-                const recipe = recipes.find(r => r.id === meal.recipeId);
-                if (recipe && recipe.ingredients) {
-                    const nutrition = calculateTotalNutrition(recipe.ingredients);
-                    const servings = recipe.servings || 1;
-                    
-                    dayCalories += (nutrition.calories || 0) / servings;
-                    dayProtein += (nutrition.protein || 0) / servings;
-                    dayFat += (nutrition.fat || 0) / servings;
-                    dayCarbs += (nutrition.carbs || 0) / servings;
-                    dayMealCount++;
-                }
-            });
-        }
-        
-        if (dayMealCount > 0) {
-            totalCalories += dayCalories;
-            totalProtein += dayProtein;
-            totalFat += dayFat;
-            totalCarbs += dayCarbs;
-            mealCount += dayMealCount;
+        // その日に何かの食事があるかチェック
+        if (dayNutrition.calories > 0 || dayNutrition.protein > 0 || dayNutrition.fat > 0 || dayNutrition.carbs > 0) {
+            totalCalories += dayNutrition.calories;
+            totalProtein += dayNutrition.protein;
+            totalFat += dayNutrition.fat;
+            totalCarbs += dayNutrition.carbs;
             daysWithMeals++;
         }
     }
@@ -1442,6 +1431,33 @@ function updateWeeklyNutritionSummary() {
             <div class="nutrition-unit">1日平均: ${Math.round(avgCarbs)}g</div>
         </div>
     `;
+}
+
+// 1日分の栄養素を計算
+function calculateDayNutrition(dateStr) {
+    let dayNutrition = {
+        calories: 0,
+        protein: 0,
+        fat: 0,
+        carbs: 0
+    };
+    
+    if (mealPlans[dateStr]) {
+        Object.values(mealPlans[dateStr]).forEach(meal => {
+            const recipe = recipes.find(r => r.id === meal.recipeId);
+            if (recipe && recipe.ingredients) {
+                const nutrition = calculateTotalNutrition(recipe.ingredients);
+                const servings = recipe.servings || 1;
+                
+                dayNutrition.calories += (nutrition.calories || 0) / servings;
+                dayNutrition.protein += (nutrition.protein || 0) / servings;
+                dayNutrition.fat += (nutrition.fat || 0) / servings;
+                dayNutrition.carbs += (nutrition.carbs || 0) / servings;
+            }
+        });
+    }
+    
+    return dayNutrition;
 }
 
 // 合計栄養素の計算
