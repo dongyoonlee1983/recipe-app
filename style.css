@@ -1092,8 +1092,7 @@ header {
     border-radius: 0 0 4px 4px;
 }
 
-.export-dropdown:hover .dropdown-content,
-.import-dropdown:hover .dropdown-content {
+.dropdown-content.show {
     display: block;
 }
 

@@ -168,6 +168,48 @@ document.addEventListener('DOMContentLoaded', () => {
         displayRecipes(searchInput.value);
         updateFavoriteCount();
     });
+
+    // ドロップダウンメニューの制御
+    const exportBtn = document.getElementById('exportBtn');
+    const exportDropdown = document.getElementById('exportDropdown');
+    const importBtn = document.getElementById('importBtn');
+    const importDropdown = document.getElementById('importDropdown');
+    
+    // エクスポートドロップダウンの表示/非表示
+    exportBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        importDropdown.classList.remove('show'); // 他のドロップダウンを閉じる
+        exportDropdown.classList.toggle('show');
+    });
+    
+    // インポートドロップダウンの表示/非表示
+    importBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        exportDropdown.classList.remove('show'); // 他のドロップダウンを閉じる
+        importDropdown.classList.toggle('show');
+    });
+    
+    // ドキュメントクリックでドロップダウンを閉じる
+    document.addEventListener('click', () => {
+        exportDropdown.classList.remove('show');
+        importDropdown.classList.remove('show');
+    });
+    
+    // ドロップダウン内のクリックでイベント伝播を止める
+    exportDropdown.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+    
+    importDropdown.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+
+    // 初期化処理
+    updateCategorySelects();
+    displayRecipes();
+    loadSharedRecipe(); // 共有レシピの確認
 });
 
 // レシピフォームの表示/非表示
@@ -1385,6 +1427,12 @@ function removeCategory(categoryName) {
 function exportRecipes(format = 'json') {
     const today = new Date().toISOString().split('T')[0];
     
+    // ドロップダウンを閉じる
+    const exportDropdown = document.getElementById('exportDropdown');
+    if (exportDropdown) {
+        exportDropdown.classList.remove('show');
+    }
+    
     if (format === 'json') {
         const exportData = {
             recipes: recipes,
@@ -1461,6 +1509,12 @@ function convertRecipesToCSV(recipes) {
 function importRecipes(event, format) {
     const file = event.target.files[0];
     if (!file) return;
+    
+    // ドロップダウンを閉じる
+    const importDropdown = document.getElementById('importDropdown');
+    if (importDropdown) {
+        importDropdown.classList.remove('show');
+    }
     
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -1724,9 +1778,3 @@ function loadSharedRecipe() {
     }
 }
 
-// 初期化処理
-document.addEventListener('DOMContentLoaded', () => {
-    updateCategorySelects();
-    displayRecipes();
-    loadSharedRecipe(); // 共有レシピの確認
-});
