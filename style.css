@@ -406,28 +406,23 @@ header {
     position: absolute;
     top: 10px;
     right: 10px;
-    background: white;
-    border: 2px solid #FF1744;
-    color: #FF1744;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: #ddd;
+    font-size: 28px;
     cursor: pointer;
-    font-size: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     transition: all 0.3s;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    padding: 5px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 .favorite-btn:hover {
-    transform: scale(1.1);
+    transform: scale(1.2);
+    color: #FF1744;
 }
 
 .favorite-btn.favorited {
-    background-color: #FF1744;
-    color: white;
+    color: #FF1744;
 }
 
 .recipe-card {
