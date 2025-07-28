@@ -79,6 +79,7 @@ for (const [food, nutrition] of Object.entries(nutritionDatabase)) {
 
 // 栄養素計算関数
 function calculateNutrition(ingredient, amount, unit = "g") {
+    console.log(`Calculating nutrition for: "${ingredient}", amount: ${amount}, unit: ${unit}`);
     const normalizedIngredient = ingredient.trim();
     let weightInGrams = amount;
     
@@ -86,19 +87,41 @@ function calculateNutrition(ingredient, amount, unit = "g") {
     if (unit !== "g" && unitConversions[unit]) {
         if (unitConversions[unit][normalizedIngredient]) {
             weightInGrams = amount * unitConversions[unit][normalizedIngredient];
+            console.log(`Unit conversion: ${amount} ${unit} = ${weightInGrams}g`);
         }
     }
     
-    // 栄養素計算
+    // 栄養素計算（完全一致を先に試す）
     if (nutritionDatabase[normalizedIngredient]) {
         const nutrition = nutritionDatabase[normalizedIngredient];
-        return {
+        const result = {
             calories: Math.round((nutrition.calories * weightInGrams) / 100),
             protein: Math.round((nutrition.protein * weightInGrams) / 100 * 10) / 10,
             fat: Math.round((nutrition.fat * weightInGrams) / 100 * 10) / 10,
             carbs: Math.round((nutrition.carbs * weightInGrams) / 100 * 10) / 10
         };
+        console.log(`Found exact match for "${normalizedIngredient}":`, result);
+        return result;
     }
     
+    // 部分一致を試す
+    const keys = Object.keys(nutritionDatabase);
+    const partialMatch = keys.find(key => 
+        key.includes(normalizedIngredient) || normalizedIngredient.includes(key)
+    );
+    
+    if (partialMatch) {
+        const nutrition = nutritionDatabase[partialMatch];
+        const result = {
+            calories: Math.round((nutrition.calories * weightInGrams) / 100),
+            protein: Math.round((nutrition.protein * weightInGrams) / 100 * 10) / 10,
+            fat: Math.round((nutrition.fat * weightInGrams) / 100 * 10) / 10,
+            carbs: Math.round((nutrition.carbs * weightInGrams) / 100 * 10) / 10
+        };
+        console.log(`Found partial match for "${normalizedIngredient}" with "${partialMatch}":`, result);
+        return result;
+    }
+    
+    console.log(`No match found for "${normalizedIngredient}"`);
     return { calories: 0, protein: 0, fat: 0, carbs: 0 };
 }
