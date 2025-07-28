@@ -46,9 +46,22 @@
             <div class="recipe-controls">
                 <button id="addRecipeBtn" class="add-btn">新しいレシピを追加</button>
                 <div class="import-export-controls">
-                    <button id="exportBtn" class="control-btn">エクスポート</button>
-                    <label for="importFile" class="control-btn import-label">インポート</label>
-                    <input type="file" id="importFile" accept=".json" style="display: none;">
+                    <div class="export-dropdown">
+                        <button id="exportBtn" class="control-btn dropdown-btn">エクスポート ▼</button>
+                        <div class="dropdown-content" id="exportDropdown">
+                            <button onclick="exportRecipes('json')">JSON形式</button>
+                            <button onclick="exportRecipes('csv')">CSV形式</button>
+                        </div>
+                    </div>
+                    <div class="import-dropdown">
+                        <button class="control-btn dropdown-btn">インポート ▼</button>
+                        <div class="dropdown-content">
+                            <label for="importJsonFile">JSON形式</label>
+                            <label for="importCsvFile">CSV形式</label>
+                        </div>
+                    </div>
+                    <input type="file" id="importJsonFile" accept=".json" style="display: none;">
+                    <input type="file" id="importCsvFile" accept=".csv" style="display: none;">
                 </div>
             </div>
         

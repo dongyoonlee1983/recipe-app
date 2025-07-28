@@ -27,7 +27,8 @@ const addCategoryBtn = document.getElementById('addCategoryBtn');
 
 // エクスポート/インポート要素
 const exportBtn = document.getElementById('exportBtn');
-const importFile = document.getElementById('importFile');
+const importJsonFile = document.getElementById('importJsonFile');
+const importCsvFile = document.getElementById('importCsvFile');
 
 // フィルター状態
 let selectedCategory = '';
@@ -200,14 +201,13 @@ addCategoryBtn.addEventListener('click', () => {
     openCategoryModal();
 });
 
-// エクスポートボタン
-exportBtn.addEventListener('click', () => {
-    exportRecipes();
+// インポートファイル
+importJsonFile.addEventListener('change', (e) => {
+    importRecipes(e, 'json');
 });
 
-// インポートファイル
-importFile.addEventListener('change', (e) => {
-    importRecipes(e);
+importCsvFile.addEventListener('change', (e) => {
+    importRecipes(e, 'csv');
 });
 
 cancelBtn.addEventListener('click', () => {
@@ -1382,48 +1382,96 @@ function removeCategory(categoryName) {
 }
 
 // エクスポート機能
-function exportRecipes() {
-    const exportData = {
-        recipes: recipes,
-        customCategories: customCategories,
-        favorites: favorites,
-        exportDate: new Date().toISOString(),
-        version: "1.0"
-    };
+function exportRecipes(format = 'json') {
+    const today = new Date().toISOString().split('T')[0];
     
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    if (format === 'json') {
+        const exportData = {
+            recipes: recipes,
+            customCategories: customCategories,
+            favorites: favorites,
+            exportDate: new Date().toISOString(),
+            version: "1.0"
+        };
+        
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = `recipes_export_${today}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        alert('レシピデータをJSON形式でエクスポートしました！');
+    } else if (format === 'csv') {
+        const csvData = convertRecipesToCSV(recipes);
+        const dataBlob = new Blob([csvData], {type: 'text/csv;charset=utf-8;'});
+        
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = `recipes_export_${today}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        alert('レシピデータをCSV形式でエクスポートしました！');
+    }
+}
+
+// レシピをCSV形式に変換
+function convertRecipesToCSV(recipes) {
+    const headers = [
+        'レシピ名', '人数分', 'カテゴリー', 'タグ', '材料',
+        '材料詳細', '作り方', '総カロリー', '1人分カロリー'
+    ];
     
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(dataBlob);
-    link.download = `recipes_export_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    let csvContent = '\uFEFF'; // BOMを追加してExcelで正しく表示
+    csvContent += headers.join(',') + '\n';
     
-    alert('レシピデータをエクスポートしました！');
+    recipes.forEach(recipe => {
+        const tags = recipe.tags ? recipe.tags.join('|') : '';
+        const ingredients = recipe.ingredients.map(ing => 
+            `${ing.name} ${ing.amount}${ing.unit}`
+        ).join('|');
+        const ingredientsDetail = recipe.ingredients.map(ing => 
+            `${ing.name}:${ing.amount}${ing.unit}:${ing.calories}kcal`
+        ).join('|');
+        
+        const row = [
+            `"${recipe.name}"`,
+            recipe.servings,
+            `"${recipe.category}"`,
+            `"${tags}"`,
+            `"${ingredients}"`,
+            `"${ingredientsDetail}"`,
+            `"${recipe.instructions.replace(/"/g, '""')}"`,
+            recipe.totalCalories,
+            recipe.caloriesPerServing
+        ];
+        
+        csvContent += row.join(',') + '\n';
+    });
+    
+    return csvContent;
 }
 
 // インポート機能
-function importRecipes(event) {
+function importRecipes(event, format) {
     const file = event.target.files[0];
     if (!file) return;
     
     const reader = new FileReader();
     reader.onload = function(e) {
         try {
-            const importData = JSON.parse(e.target.result);
+            let importedRecipes = [];
             
-            if (importData.recipes && Array.isArray(importData.recipes)) {
-                if (confirm(`${importData.recipes.length}個のレシピをインポートしますか？\n※既存のデータは保持されます`)) {
-                    // 既存のIDと重複しないよう新しいIDを生成
-                    const maxId = Math.max(...recipes.map(r => r.id), 0);
-                    let newId = maxId + 1;
-                    
-                    importData.recipes.forEach(recipe => {
-                        recipe.id = newId++;
-                        recipes.push(recipe);
-                    });
+            if (format === 'json') {
+                const importData = JSON.parse(e.target.result);
+                
+                if (importData.recipes && Array.isArray(importData.recipes)) {
+                    importedRecipes = importData.recipes;
                     
                     // カスタムカテゴリーもインポート
                     if (importData.customCategories && Array.isArray(importData.customCategories)) {
@@ -1433,19 +1481,39 @@ function importRecipes(event) {
                             }
                         });
                     }
+                } else {
+                    alert('無効なJSONファイル形式です。');
+                    return;
+                }
+            } else if (format === 'csv') {
+                importedRecipes = parseCSVToRecipes(e.target.result);
+                if (importedRecipes.length === 0) {
+                    alert('CSVファイルからレシピを読み込めませんでした。');
+                    return;
+                }
+            }
+            
+            if (importedRecipes.length > 0) {
+                if (confirm(`${importedRecipes.length}個のレシピをインポートしますか？\n※既存のデータは保持されます`)) {
+                    // 既存のIDと重複しないよう新しいIDを生成
+                    const maxId = Math.max(...recipes.map(r => r.id), 0);
+                    let newId = maxId + 1;
+                    
+                    importedRecipes.forEach(recipe => {
+                        recipe.id = newId++;
+                        recipes.push(recipe);
+                    });
                     
                     saveToLocalStorage();
                     updateCategorySelects();
                     displayRecipes();
-                    alert('レシピデータをインポートしました！');
+                    alert(`レシピデータを${format.toUpperCase()}形式でインポートしました！`);
                 } else {
                     alert('インポートをキャンセルしました。');
                 }
-            } else {
-                alert('無効なファイル形式です。');
             }
         } catch (error) {
-            alert('ファイルの読み込みに失敗しました。');
+            alert(`ファイルの読み込みに失敗しました: ${error.message}`);
         }
         
         // ファイル入力をリセット
@@ -1453,6 +1521,111 @@ function importRecipes(event) {
     };
     
     reader.readAsText(file);
+}
+
+// CSVをレシピオブジェクトに変換
+function parseCSVToRecipes(csvText) {
+    const lines = csvText.split('\n');
+    if (lines.length < 2) return [];
+    
+    // BOMを除去
+    const cleanText = csvText.replace(/^\uFEFF/, '');
+    const cleanLines = cleanText.split('\n');
+    
+    // ヘッダー行をスキップ
+    const dataLines = cleanLines.slice(1).filter(line => line.trim());
+    
+    const recipes = [];
+    
+    dataLines.forEach((line, index) => {
+        try {
+            const columns = parseCSVLine(line);
+            if (columns.length >= 9) {
+                const ingredients = parseIngredientsFromCSV(columns[5]); // 材料詳細を使用
+                
+                const recipe = {
+                    name: columns[0],
+                    servings: parseInt(columns[1]) || 1,
+                    category: columns[2] || 'その他',
+                    tags: columns[3] ? columns[3].split('|') : [],
+                    ingredients: ingredients,
+                    instructions: columns[6],
+                    totalCalories: parseInt(columns[7]) || 0,
+                    caloriesPerServing: parseInt(columns[8]) || 0,
+                    image: null
+                };
+                
+                recipes.push(recipe);
+            }
+        } catch (error) {
+            console.warn(`CSV行 ${index + 2} の解析に失敗:`, error);
+        }
+    });
+    
+    return recipes;
+}
+
+// CSV行を解析（ダブルクォート内のカンマを考慮）
+function parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+            if (inQuotes && line[i + 1] === '"') {
+                current += '"';
+                i++; // 次の文字をスキップ
+            } else {
+                inQuotes = !inQuotes;
+            }
+        } else if (char === ',' && !inQuotes) {
+            result.push(current);
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+    
+    result.push(current);
+    return result;
+}
+
+// CSV形式の材料データを解析
+function parseIngredientsFromCSV(ingredientsText) {
+    if (!ingredientsText) return [];
+    
+    const ingredientItems = ingredientsText.split('|');
+    const ingredients = [];
+    
+    ingredientItems.forEach(item => {
+        const parts = item.split(':');
+        if (parts.length >= 3) {
+            const name = parts[0];
+            const amountUnit = parts[1];
+            const caloriesText = parts[2];
+            
+            // 数量と単位を分離
+            const match = amountUnit.match(/^(\d+(?:\.\d+)?)(.+)$/);
+            if (match) {
+                const amount = parseFloat(match[1]);
+                const unit = match[2];
+                const calories = parseInt(caloriesText.replace('kcal', '')) || 0;
+                
+                ingredients.push({
+                    name: name,
+                    amount: amount,
+                    unit: unit,
+                    calories: calories,
+                    nutrition: { calories: calories, protein: 0, fat: 0, carbs: 0 }
+                });
+            }
+        }
+    });
+    
+    return ingredients;
 }
 
 // レシピ共有機能
