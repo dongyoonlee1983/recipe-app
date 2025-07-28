@@ -210,6 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCategorySelects();
     displayRecipes();
     loadSharedRecipe(); // 共有レシピの確認
+    initializeRecommendedPlans(); // オススメ献立の初期化
 });
 
 // レシピフォームの表示/非表示
@@ -1074,6 +1075,79 @@ if (recipes.length === 0) {
 // 週間献立プランナー機能
 let mealPlans = JSON.parse(localStorage.getItem('mealPlans')) || {};
 let currentWeekStart = getMonday(new Date());
+let selectedDay = null; // 選択された日付
+
+// オススメ週間献立データ（1人用）
+const recommendedWeeklyPlans = [
+    {
+        id: 'balanced_week',
+        name: 'バランス重視の1週間',
+        description: '栄養バランスを重視したヘルシーな献立',
+        plan: {
+            '2024-01-01': {
+                breakfast: { name: '野菜たっぷりオムレツ', calories: 300, protein: 20, fat: 15, carbs: 10 },
+                lunch: { name: '鶏胸肉のサラダ', calories: 400, protein: 35, fat: 12, carbs: 25 },
+                dinner: { name: '鮭の塩焼き定食', calories: 500, protein: 30, fat: 18, carbs: 45 },
+                snack: { name: 'ヨーグルト', calories: 100, protein: 8, fat: 3, carbs: 12 }
+            }
+            // 他の日も同様に定義（実際の実装では動的に生成）
+        },
+        shoppingList: [
+            { category: '肉類', items: [
+                { name: '鶏胸肉', amount: '500g' },
+                { name: '豚肉（しゃぶしゃぶ用）', amount: '300g' }
+            ]},
+            { category: '魚類', items: [
+                { name: '鮭の切り身', amount: '4切れ' },
+                { name: 'サバの切り身', amount: '2切れ' }
+            ]},
+            { category: '野菜', items: [
+                { name: 'キャベツ', amount: '1玉' },
+                { name: 'にんじん', amount: '3本' },
+                { name: 'たまねぎ', amount: '3個' },
+                { name: 'ブロッコリー', amount: '2株' }
+            ]},
+            { category: 'その他', items: [
+                { name: '卵', amount: '1パック' },
+                { name: 'ヨーグルト', amount: '500g' },
+                { name: 'パン', amount: '1斤' }
+            ]}
+        ]
+    },
+    {
+        id: 'simple_week',
+        name: '簡単調理の1週間',
+        description: '調理時間を短縮した忙しい人向けの献立',
+        plan: {},
+        shoppingList: [
+            { category: '冷凍食品', items: [
+                { name: '冷凍チャーハン', amount: '3袋' },
+                { name: '冷凍うどん', amount: '5玉' }
+            ]},
+            { category: '調理済み', items: [
+                { name: 'サラダチキン', amount: '5個' },
+                { name: 'カット野菜', amount: '7袋' }
+            ]}
+        ]
+    },
+    {
+        id: 'economy_week',
+        name: '節約重視の1週間',
+        description: 'コストを抑えた家計に優しい献立',
+        plan: {},
+        shoppingList: [
+            { category: '肉類', items: [
+                { name: '鶏むね肉', amount: '1kg' },
+                { name: '豚こま切れ', amount: '500g' }
+            ]},
+            { category: '野菜', items: [
+                { name: 'もやし', amount: '5袋' },
+                { name: 'キャベツ', amount: '1玉' },
+                { name: '大根', amount: '1本' }
+            ]}
+        ]
+    }
+];
 
 // ナビゲーション要素
 const recipesViewBtn = document.getElementById('recipesViewBtn');
@@ -1139,7 +1213,7 @@ function renderWeekCalendar() {
         dayColumn.className = 'day-column';
         
         dayColumn.innerHTML = `
-            <div class="day-header">
+            <div class="day-header ${selectedDay === dateStr ? 'selected' : ''}" onclick="selectDay('${dateStr}')">
                 ${weekDays[i]}
                 <div class="day-date">${date.getMonth() + 1}/${date.getDate()}</div>
             </div>
@@ -1162,6 +1236,12 @@ function renderWeekCalendar() {
                         ${renderMealContent(dateStr, 'dinner')}
                     </div>
                 </div>
+                <div class="meal-slot" data-date="${dateStr}" data-meal="snack">
+                    <div class="meal-type">間食</div>
+                    <div class="meal-content">
+                        ${renderMealContent(dateStr, 'snack')}
+                    </div>
+                </div>
             </div>
         `;
         
@@ -1170,6 +1250,10 @@ function renderWeekCalendar() {
     
     // 週間栄養サマリーを更新
     updateWeeklyNutritionSummary();
+    // 買い物リストを更新
+    updateShoppingList();
+    // 1日の栄養サマリーを更新
+    updateDailyNutritionSummary();
 }
 
 // 食事内容のレンダリング
@@ -1177,14 +1261,27 @@ function renderMealContent(date, mealType) {
     const mealPlan = mealPlans[date] && mealPlans[date][mealType];
     
     if (mealPlan) {
-        const recipe = recipes.find(r => r.id === mealPlan.recipeId);
-        if (recipe) {
+        // 簡易献立の場合
+        if (mealPlan.simpleMeal) {
             return `
                 <div class="selected-recipe">
-                    ${recipe.name}
+                    ${mealPlan.simpleMeal}
+                    <div class="meal-calories">${mealPlan.calories}kcal</div>
                     <button class="remove-meal-btn" onclick="removeMeal('${date}', '${mealType}')">×</button>
                 </div>
             `;
+        }
+        // レシピの場合
+        else if (mealPlan.recipeId) {
+            const recipe = recipes.find(r => r.id === mealPlan.recipeId);
+            if (recipe) {
+                return `
+                    <div class="selected-recipe">
+                        ${recipe.name}
+                        <button class="remove-meal-btn" onclick="removeMeal('${date}', '${mealType}')">×</button>
+                    </div>
+                `;
+            }
         }
     }
     
@@ -1352,6 +1449,168 @@ nextWeekBtn.addEventListener('click', () => {
     currentWeekStart.setDate(currentWeekStart.getDate() + 7);
     renderWeekCalendar();
 });
+
+// オススメ献立の初期化
+function initializeRecommendedPlans() {
+    const recommendedPlanSelect = document.getElementById('recommendedPlanSelect');
+    const applyRecommendedPlan = document.getElementById('applyRecommendedPlan');
+    
+    // セレクトボックスにオプションを追加
+    recommendedWeeklyPlans.forEach(plan => {
+        const option = document.createElement('option');
+        option.value = plan.id;
+        option.textContent = plan.name;
+        option.title = plan.description;
+        recommendedPlanSelect.appendChild(option);
+    });
+    
+    // 適用ボタンのイベントリスナー
+    applyRecommendedPlan.addEventListener('click', () => {
+        const selectedPlanId = recommendedPlanSelect.value;
+        if (selectedPlanId) {
+            applyRecommendedWeeklyPlan(selectedPlanId);
+        }
+    });
+}
+
+// オススメ献立を適用
+function applyRecommendedWeeklyPlan(planId) {
+    const plan = recommendedWeeklyPlans.find(p => p.id === planId);
+    if (!plan) return;
+    
+    if (confirm(`「${plan.name}」を今週に適用しますか？\n※既存の献立は上書きされます`)) {
+        // 現在の週の献立をクリア
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(currentWeekStart);
+            date.setDate(date.getDate() + i);
+            const dateStr = formatDate(date);
+            delete mealPlans[dateStr];
+        }
+        
+        // 簡易的な献立パターンを適用（実装を簡単にするため）
+        const mealPatterns = {
+            breakfast: ['オムレツ', 'トースト', 'ヨーグルト', 'サラダ', 'スムージー', 'おにぎり', 'パンケーキ'],
+            lunch: ['サラダボウル', 'サンドイッチ', '弁当', 'パスタ', '丼もの', 'うどん', 'チャーハン'],
+            dinner: ['鮭定食', '鶏の照り焼き', '豚の生姜焼き', '野菜炒め', 'カレー', '焼き魚', 'ハンバーグ'],
+            snack: ['ヨーグルト', 'フルーツ', 'ナッツ', 'チーズ', 'クラッカー', 'プロテインバー', '小魚']
+        };
+        
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(currentWeekStart);
+            date.setDate(date.getDate() + i);
+            const dateStr = formatDate(date);
+            
+            mealPlans[dateStr] = {
+                breakfast: { simpleMeal: mealPatterns.breakfast[i], calories: 300, protein: 15, fat: 10, carbs: 30 },
+                lunch: { simpleMeal: mealPatterns.lunch[i], calories: 450, protein: 25, fat: 15, carbs: 45 },
+                dinner: { simpleMeal: mealPatterns.dinner[i], calories: 550, protein: 30, fat: 20, carbs: 50 },
+                snack: { simpleMeal: mealPatterns.snack[i], calories: 150, protein: 8, fat: 5, carbs: 15 }
+            };
+        }
+        
+        localStorage.setItem('mealPlans', JSON.stringify(mealPlans));
+        renderWeekCalendar();
+        alert(`「${plan.name}」を適用しました！`);
+    }
+}
+
+// 日付選択
+function selectDay(dateStr) {
+    selectedDay = dateStr;
+    renderWeekCalendar();
+}
+
+// 買い物リストの更新
+function updateShoppingList() {
+    const shoppingListContainer = document.getElementById('weeklyShoppingList');
+    const selectedPlanId = document.getElementById('recommendedPlanSelect').value;
+    
+    if (selectedPlanId) {
+        const plan = recommendedWeeklyPlans.find(p => p.id === selectedPlanId);
+        if (plan && plan.shoppingList) {
+            const shoppingListHTML = plan.shoppingList.map(group => `
+                <div class="ingredient-group">
+                    <h4>${group.category}</h4>
+                    ${group.items.map(item => `
+                        <div class="ingredient-item">
+                            <span class="ingredient-name">${item.name}</span>
+                            <span class="ingredient-amount">${item.amount}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('');
+            
+            shoppingListContainer.innerHTML = shoppingListHTML;
+            return;
+        }
+    }
+    
+    // デフォルトメッセージ
+    shoppingListContainer.innerHTML = '<p style="color: #666; text-align: center;">オススメ献立を選択すると買い物リストが表示されます</p>';
+}
+
+// 1日の栄養サマリーの更新
+function updateDailyNutritionSummary() {
+    const summaryContainer = document.getElementById('dailyNutritionSummary');
+    
+    if (!selectedDay) {
+        // 今日の日付を初期選択
+        selectedDay = formatDate(new Date());
+    }
+    
+    const dayMeals = mealPlans[selectedDay];
+    let totalCalories = 0;
+    let totalProtein = 0;
+    let totalFat = 0;
+    let totalCarbs = 0;
+    
+    if (dayMeals) {
+        Object.values(dayMeals).forEach(meal => {
+            if (meal.simpleMeal) {
+                // 簡易献立の場合
+                totalCalories += meal.calories || 0;
+                totalProtein += meal.protein || 0;
+                totalFat += meal.fat || 0;
+                totalCarbs += meal.carbs || 0;
+            } else if (meal.recipeId) {
+                // レシピの場合
+                const recipe = recipes.find(r => r.id === meal.recipeId);
+                if (recipe && recipe.ingredients) {
+                    const nutrition = calculateTotalNutrition(recipe.ingredients);
+                    const servings = recipe.servings || 1;
+                    
+                    totalCalories += (nutrition.calories || 0) / servings;
+                    totalProtein += (nutrition.protein || 0) / servings;
+                    totalFat += (nutrition.fat || 0) / servings;
+                    totalCarbs += (nutrition.carbs || 0) / servings;
+                }
+            }
+        });
+    }
+    
+    const selectedDate = new Date(selectedDay);
+    const dateStr = `${selectedDate.getMonth() + 1}/${selectedDate.getDate()}`;
+    
+    summaryContainer.innerHTML = `
+        <h4 style="text-align: center; margin-bottom: 15px; color: #2E7D32;">${dateStr}の栄養</h4>
+        <div class="nutrition-item">
+            <div class="nutrition-label">カロリー</div>
+            <div class="nutrition-value">${Math.round(totalCalories)}</div>
+        </div>
+        <div class="nutrition-item">
+            <div class="nutrition-label">たんぱく質</div>
+            <div class="nutrition-value">${Math.round(totalProtein)}g</div>
+        </div>
+        <div class="nutrition-item">
+            <div class="nutrition-label">脂質</div>
+            <div class="nutrition-value">${Math.round(totalFat)}g</div>
+        </div>
+        <div class="nutrition-item">
+            <div class="nutrition-label">炭水化物</div>
+            <div class="nutrition-value">${Math.round(totalCarbs)}g</div>
+        </div>
+    `;
+}
 
 // カテゴリー管理モーダルを開く
 function openCategoryModal() {
