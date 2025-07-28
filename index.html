@@ -181,7 +181,17 @@
     
     <script src="calorie-database.js"></script>
     <script src="nutrition-database.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Chart.jsの重複読み込みを防ぐ
+        if (typeof Chart === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+            script.onload = function() {
+                console.log('Chart.js loaded successfully');
+            };
+            document.head.appendChild(script);
+        }
+    </script>
     <script src="script.js"></script>
 </body>
 </html>

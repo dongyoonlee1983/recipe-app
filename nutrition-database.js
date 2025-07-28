@@ -1,5 +1,6 @@
 // 栄養素データベース（100gあたり）
-const nutritionDatabase = {
+if (typeof nutritionDatabase === 'undefined') {
+    var nutritionDatabase = {
     // 穀物・主食
     "ご飯": { calories: 168, protein: 2.5, fat: 0.3, carbs: 37.1 },
     "パン": { calories: 264, protein: 9.3, fat: 4.4, carbs: 46.7 },
@@ -69,21 +70,21 @@ const nutritionDatabase = {
     "米": { calories: 356, protein: 6.1, fat: 0.9, carbs: 77.9 },
     "小麦粉": { calories: 367, protein: 8.3, fat: 1.5, carbs: 75.8 },
     "片栗粉": { calories: 330, protein: 0.1, fat: 0.1, carbs: 81.6 }
-};
+    };
+}
 
 // カロリーデータベース（後方互換性のため）
-const calorieDatabase = {};
-for (const [food, nutrition] of Object.entries(nutritionDatabase)) {
-    calorieDatabase[food] = nutrition.calories;
+if (typeof calorieDatabase === 'undefined') {
+    var calorieDatabase = {};
+    for (const [food, nutrition] of Object.entries(nutritionDatabase)) {
+        calorieDatabase[food] = nutrition.calories;
+    }
 }
 
 // 栄養素計算関数
 function calculateNutrition(ingredient, amount, unit = "g") {
-    console.log(`Calculating nutrition for: "${ingredient}", amount: ${amount}, unit: ${unit}`);
-    
     // nutritionDatabaseが利用可能かチェック
     if (typeof nutritionDatabase === 'undefined') {
-        console.error('nutritionDatabase is not available in calculateNutrition');
         return { calories: 0, protein: 0, fat: 0, carbs: 0 };
     }
     
@@ -94,21 +95,18 @@ function calculateNutrition(ingredient, amount, unit = "g") {
     if (unit !== "g" && unitConversions[unit]) {
         if (unitConversions[unit][normalizedIngredient]) {
             weightInGrams = amount * unitConversions[unit][normalizedIngredient];
-            console.log(`Unit conversion: ${amount} ${unit} = ${weightInGrams}g`);
         }
     }
     
     // 栄養素計算（完全一致を先に試す）
     if (nutritionDatabase[normalizedIngredient]) {
         const nutrition = nutritionDatabase[normalizedIngredient];
-        const result = {
+        return {
             calories: Math.round((nutrition.calories * weightInGrams) / 100),
             protein: Math.round((nutrition.protein * weightInGrams) / 100 * 10) / 10,
             fat: Math.round((nutrition.fat * weightInGrams) / 100 * 10) / 10,
             carbs: Math.round((nutrition.carbs * weightInGrams) / 100 * 10) / 10
         };
-        console.log(`Found exact match for "${normalizedIngredient}":`, result);
-        return result;
     }
     
     // 部分一致を試す
@@ -119,16 +117,13 @@ function calculateNutrition(ingredient, amount, unit = "g") {
     
     if (partialMatch) {
         const nutrition = nutritionDatabase[partialMatch];
-        const result = {
+        return {
             calories: Math.round((nutrition.calories * weightInGrams) / 100),
             protein: Math.round((nutrition.protein * weightInGrams) / 100 * 10) / 10,
             fat: Math.round((nutrition.fat * weightInGrams) / 100 * 10) / 10,
             carbs: Math.round((nutrition.carbs * weightInGrams) / 100 * 10) / 10
         };
-        console.log(`Found partial match for "${normalizedIngredient}" with "${partialMatch}":`, result);
-        return result;
     }
     
-    console.log(`No match found for "${normalizedIngredient}"`);
     return { calories: 0, protein: 0, fat: 0, carbs: 0 };
 }
