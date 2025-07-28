@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 初期化処理
-    if (typeof nutritionDatabase !== 'undefined') {
+    if (typeof window.nutritionDatabase !== 'undefined' || typeof nutritionDatabase !== 'undefined') {
         updateRecipeNutrition(); // 既存レシピの栄養情報を更新
     }
     updateCategorySelects();
