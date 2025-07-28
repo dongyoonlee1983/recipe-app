@@ -1446,7 +1446,9 @@ function calculateDayNutrition(dateStr) {
         Object.values(mealPlans[dateStr]).forEach(meal => {
             const recipe = recipes.find(r => r.id === meal.recipeId);
             if (recipe && recipe.ingredients) {
+                console.log('Recipe found:', recipe.name, 'Ingredients:', recipe.ingredients);
                 const nutrition = calculateTotalNutrition(recipe.ingredients);
+                console.log('Calculated nutrition:', nutrition);
                 const servings = recipe.servings || 1;
                 
                 dayNutrition.calories += (nutrition.calories || 0) / servings;
@@ -1457,6 +1459,7 @@ function calculateDayNutrition(dateStr) {
         });
     }
     
+    console.log('Day nutrition for', dateStr, ':', dayNutrition);
     return dayNutrition;
 }
 
