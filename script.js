@@ -832,3 +832,279 @@ if (recipes.length === 0) {
     saveToLocalStorage();
     displayRecipes();
 }
+
+// 週間献立プランナー機能
+let mealPlans = JSON.parse(localStorage.getItem('mealPlans')) || {};
+let currentWeekStart = getMonday(new Date());
+
+// ナビゲーション要素
+const recipesViewBtn = document.getElementById('recipesViewBtn');
+const mealPlannerBtn = document.getElementById('mealPlannerBtn');
+const recipesView = document.getElementById('recipesView');
+const mealPlannerView = document.getElementById('mealPlannerView');
+
+// 週間カレンダー要素
+const prevWeekBtn = document.getElementById('prevWeekBtn');
+const nextWeekBtn = document.getElementById('nextWeekBtn');
+const currentWeekDisplay = document.getElementById('currentWeekDisplay');
+const weekCalendar = document.getElementById('weekCalendar');
+
+// ナビゲーションイベント
+recipesViewBtn.addEventListener('click', () => {
+    recipesViewBtn.classList.add('active');
+    mealPlannerBtn.classList.remove('active');
+    recipesView.classList.remove('hidden');
+    mealPlannerView.classList.add('hidden');
+});
+
+mealPlannerBtn.addEventListener('click', () => {
+    mealPlannerBtn.classList.add('active');
+    recipesViewBtn.classList.remove('active');
+    mealPlannerView.classList.remove('hidden');
+    recipesView.classList.add('hidden');
+    renderWeekCalendar();
+});
+
+// 週の開始日（月曜日）を取得
+function getMonday(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(d.setDate(diff));
+}
+
+// 日付フォーマット
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+// 週間カレンダーのレンダリング
+function renderWeekCalendar() {
+    const weekDays = ['月', '火', '水', '木', '金', '土', '日'];
+    weekCalendar.innerHTML = '';
+    
+    // 現在の週を表示
+    const weekEnd = new Date(currentWeekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    currentWeekDisplay.textContent = `${formatDate(currentWeekStart)} - ${formatDate(weekEnd)}`;
+    
+    // 各曜日のカラムを作成
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(currentWeekStart);
+        date.setDate(date.getDate() + i);
+        const dateStr = formatDate(date);
+        
+        const dayColumn = document.createElement('div');
+        dayColumn.className = 'day-column';
+        
+        dayColumn.innerHTML = `
+            <div class="day-header">
+                ${weekDays[i]}
+                <div class="day-date">${date.getMonth() + 1}/${date.getDate()}</div>
+            </div>
+            <div class="meal-slots">
+                <div class="meal-slot" data-date="${dateStr}" data-meal="breakfast">
+                    <div class="meal-type">朝食</div>
+                    <div class="meal-content">
+                        ${renderMealContent(dateStr, 'breakfast')}
+                    </div>
+                </div>
+                <div class="meal-slot" data-date="${dateStr}" data-meal="lunch">
+                    <div class="meal-type">昼食</div>
+                    <div class="meal-content">
+                        ${renderMealContent(dateStr, 'lunch')}
+                    </div>
+                </div>
+                <div class="meal-slot" data-date="${dateStr}" data-meal="dinner">
+                    <div class="meal-type">夕食</div>
+                    <div class="meal-content">
+                        ${renderMealContent(dateStr, 'dinner')}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        weekCalendar.appendChild(dayColumn);
+    }
+    
+    // 週間栄養サマリーを更新
+    updateWeeklyNutritionSummary();
+}
+
+// 食事内容のレンダリング
+function renderMealContent(date, mealType) {
+    const mealPlan = mealPlans[date] && mealPlans[date][mealType];
+    
+    if (mealPlan) {
+        const recipe = recipes.find(r => r.id === mealPlan.recipeId);
+        if (recipe) {
+            return `
+                <div class="selected-recipe">
+                    ${recipe.name}
+                    <button class="remove-meal-btn" onclick="removeMeal('${date}', '${mealType}')">×</button>
+                </div>
+            `;
+        }
+    }
+    
+    return `<button class="add-meal-btn" onclick="openRecipeSelector('${date}', '${mealType}')">+ レシピを追加</button>`;
+}
+
+// レシピ選択モーダルを開く
+function openRecipeSelector(date, mealType) {
+    const modal = document.createElement('div');
+    modal.className = 'recipe-select-modal';
+    modal.id = 'recipeSelectModal';
+    
+    const recipeListHTML = recipes.map(recipe => {
+        const totalNutrition = calculateTotalNutrition(recipe.ingredients);
+        return `
+            <div class="recipe-select-item" onclick="selectRecipeForMeal('${date}', '${mealType}', ${recipe.id})">
+                <div class="recipe-select-name">${recipe.name}</div>
+                <div class="recipe-select-info">
+                    ${recipe.category} • ${recipe.caloriesPerServing || 0} kcal/人分
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    modal.innerHTML = `
+        <div class="recipe-select-content">
+            <div class="recipe-select-header">
+                <h3>レシピを選択</h3>
+                <button class="close-modal" onclick="closeRecipeSelector()">×</button>
+            </div>
+            <div class="recipe-select-list">
+                ${recipeListHTML}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+// レシピ選択モーダルを閉じる
+function closeRecipeSelector() {
+    const modal = document.getElementById('recipeSelectModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// 食事にレシピを選択
+function selectRecipeForMeal(date, mealType, recipeId) {
+    if (!mealPlans[date]) {
+        mealPlans[date] = {};
+    }
+    
+    mealPlans[date][mealType] = {
+        recipeId: recipeId,
+        addedAt: new Date().toISOString()
+    };
+    
+    localStorage.setItem('mealPlans', JSON.stringify(mealPlans));
+    closeRecipeSelector();
+    renderWeekCalendar();
+}
+
+// 食事を削除
+function removeMeal(date, mealType) {
+    if (mealPlans[date]) {
+        delete mealPlans[date][mealType];
+        
+        // その日のすべての食事が削除されたら日付エントリも削除
+        if (Object.keys(mealPlans[date]).length === 0) {
+            delete mealPlans[date];
+        }
+        
+        localStorage.setItem('mealPlans', JSON.stringify(mealPlans));
+        renderWeekCalendar();
+    }
+}
+
+// 週間栄養サマリーの更新
+function updateWeeklyNutritionSummary() {
+    let totalCalories = 0;
+    let totalProtein = 0;
+    let totalFat = 0;
+    let totalCarbs = 0;
+    let mealCount = 0;
+    
+    // 現在の週の7日間を集計
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(currentWeekStart);
+        date.setDate(date.getDate() + i);
+        const dateStr = formatDate(date);
+        
+        if (mealPlans[dateStr]) {
+            Object.values(mealPlans[dateStr]).forEach(meal => {
+                const recipe = recipes.find(r => r.id === meal.recipeId);
+                if (recipe && recipe.ingredients) {
+                    const nutrition = calculateTotalNutrition(recipe.ingredients);
+                    const servings = recipe.servings || 1;
+                    
+                    totalCalories += (nutrition.calories || 0) / servings;
+                    totalProtein += (nutrition.protein || 0) / servings;
+                    totalFat += (nutrition.fat || 0) / servings;
+                    totalCarbs += (nutrition.carbs || 0) / servings;
+                    mealCount++;
+                }
+            });
+        }
+    }
+    
+    const summaryContainer = document.getElementById('weeklyNutritionSummary');
+    summaryContainer.innerHTML = `
+        <div class="nutrition-item">
+            <div class="nutrition-label">総カロリー</div>
+            <div class="nutrition-value">${Math.round(totalCalories)}</div>
+        </div>
+        <div class="nutrition-item">
+            <div class="nutrition-label">たんぱく質</div>
+            <div class="nutrition-value">${Math.round(totalProtein)}g</div>
+        </div>
+        <div class="nutrition-item">
+            <div class="nutrition-label">脂質</div>
+            <div class="nutrition-value">${Math.round(totalFat)}g</div>
+        </div>
+        <div class="nutrition-item">
+            <div class="nutrition-label">炭水化物</div>
+            <div class="nutrition-value">${Math.round(totalCarbs)}g</div>
+        </div>
+    `;
+}
+
+// 合計栄養素の計算
+function calculateTotalNutrition(ingredients) {
+    let totalNutrition = {
+        calories: 0,
+        protein: 0,
+        fat: 0,
+        carbs: 0
+    };
+    
+    ingredients.forEach(ingredient => {
+        if (ingredient.nutrition) {
+            totalNutrition.calories += ingredient.nutrition.calories || 0;
+            totalNutrition.protein += ingredient.nutrition.protein || 0;
+            totalNutrition.fat += ingredient.nutrition.fat || 0;
+            totalNutrition.carbs += ingredient.nutrition.carbs || 0;
+        }
+    });
+    
+    return totalNutrition;
+}
+
+// 週のナビゲーション
+prevWeekBtn.addEventListener('click', () => {
+    currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+    renderWeekCalendar();
+});
+
+nextWeekBtn.addEventListener('click', () => {
+    currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+    renderWeekCalendar();
+});

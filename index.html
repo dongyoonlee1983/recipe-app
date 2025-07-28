@@ -37,7 +37,13 @@
             </button>
         </div>
         
-        <button id="addRecipeBtn" class="add-btn">新しいレシピを追加</button>
+        <div class="nav-buttons">
+            <button id="recipesViewBtn" class="nav-btn active">レシピ一覧</button>
+            <button id="mealPlannerBtn" class="nav-btn">週間献立プランナー</button>
+        </div>
+        
+        <div id="recipesView" class="view-container">
+            <button id="addRecipeBtn" class="add-btn">新しいレシピを追加</button>
         
         <div id="recipeForm" class="recipe-form hidden">
             <h2>新しいレシピ</h2>
@@ -98,6 +104,29 @@
         </div>
         
         <div id="recipeList" class="recipe-list"></div>
+        </div>
+        
+        <div id="mealPlannerView" class="view-container hidden">
+            <div class="meal-planner-header">
+                <h2>週間献立プランナー</h2>
+                <div class="week-navigation">
+                    <button id="prevWeekBtn" class="week-nav-btn">←</button>
+                    <span id="currentWeekDisplay"></span>
+                    <button id="nextWeekBtn" class="week-nav-btn">→</button>
+                </div>
+            </div>
+            
+            <div class="week-calendar" id="weekCalendar">
+                <!-- カレンダーはJavaScriptで動的に生成 -->
+            </div>
+            
+            <div class="meal-plan-summary">
+                <h3>今週の栄養サマリー</h3>
+                <div id="weeklyNutritionSummary" class="nutrition-summary">
+                    <!-- 週間の栄養情報はJavaScriptで動的に生成 -->
+                </div>
+            </div>
+        </div>
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
