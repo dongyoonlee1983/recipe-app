@@ -233,9 +233,12 @@ function updateRecipeNutrition() {
         if (recipe.ingredients) {
             // 各材料に栄養情報が不足していないかチェック
             recipe.ingredients.forEach(ingredient => {
-                if (!ingredient.nutrition) {
-                    // 栄養情報を再計算
-                    ingredient.nutrition = calculateNutrition(ingredient.name, ingredient.amount, ingredient.unit);
+                // 常に栄養情報を再計算（一時的な修正）
+                const oldNutrition = ingredient.nutrition;
+                ingredient.nutrition = calculateNutrition(ingredient.name, ingredient.amount, ingredient.unit);
+                
+                // 栄養情報が変更された場合のみ更新フラグを立てる
+                if (!oldNutrition || JSON.stringify(oldNutrition) !== JSON.stringify(ingredient.nutrition)) {
                     needsUpdate = true;
                 }
             });
@@ -245,6 +248,7 @@ function updateRecipeNutrition() {
     // 更新が必要な場合はLocalStorageに保存
     if (needsUpdate) {
         localStorage.setItem('recipes', JSON.stringify(recipes));
+        console.log('Recipe nutrition updated for', recipes.length, 'recipes');
     }
 }
 
@@ -1517,6 +1521,13 @@ function calculateTotalNutrition(ingredients) {
             totalNutrition.protein += ingredient.nutrition.protein || 0;
             totalNutrition.fat += ingredient.nutrition.fat || 0;
             totalNutrition.carbs += ingredient.nutrition.carbs || 0;
+        } else if (ingredient.calories) {
+            // 古い形式のデータ（caloriesのみ）の場合
+            totalNutrition.calories += ingredient.calories || 0;
+            // 栄養素を推定（仮の値）
+            totalNutrition.protein += (ingredient.calories * 0.15) / 4 || 0; // カロリーの15%をタンパク質と仮定
+            totalNutrition.fat += (ingredient.calories * 0.25) / 9 || 0; // カロリーの25%を脂質と仮定
+            totalNutrition.carbs += (ingredient.calories * 0.60) / 4 || 0; // カロリーの60%を炭水化物と仮定
         }
     });
     
