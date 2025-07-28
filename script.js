@@ -1373,12 +1373,19 @@ function updateWeeklyNutritionSummary() {
     let totalFat = 0;
     let totalCarbs = 0;
     let mealCount = 0;
+    let daysWithMeals = 0;
     
     // 現在の週の7日間を集計
     for (let i = 0; i < 7; i++) {
         const date = new Date(currentWeekStart);
         date.setDate(date.getDate() + i);
         const dateStr = formatDate(date);
+        
+        let dayCalories = 0;
+        let dayProtein = 0;
+        let dayFat = 0;
+        let dayCarbs = 0;
+        let dayMealCount = 0;
         
         if (mealPlans[dateStr]) {
             Object.values(mealPlans[dateStr]).forEach(meal => {
@@ -1387,33 +1394,52 @@ function updateWeeklyNutritionSummary() {
                     const nutrition = calculateTotalNutrition(recipe.ingredients);
                     const servings = recipe.servings || 1;
                     
-                    totalCalories += (nutrition.calories || 0) / servings;
-                    totalProtein += (nutrition.protein || 0) / servings;
-                    totalFat += (nutrition.fat || 0) / servings;
-                    totalCarbs += (nutrition.carbs || 0) / servings;
-                    mealCount++;
+                    dayCalories += (nutrition.calories || 0) / servings;
+                    dayProtein += (nutrition.protein || 0) / servings;
+                    dayFat += (nutrition.fat || 0) / servings;
+                    dayCarbs += (nutrition.carbs || 0) / servings;
+                    dayMealCount++;
                 }
             });
         }
+        
+        if (dayMealCount > 0) {
+            totalCalories += dayCalories;
+            totalProtein += dayProtein;
+            totalFat += dayFat;
+            totalCarbs += dayCarbs;
+            mealCount += dayMealCount;
+            daysWithMeals++;
+        }
     }
+    
+    // 1日平均を計算
+    const avgCalories = daysWithMeals > 0 ? totalCalories / daysWithMeals : 0;
+    const avgProtein = daysWithMeals > 0 ? totalProtein / daysWithMeals : 0;
+    const avgFat = daysWithMeals > 0 ? totalFat / daysWithMeals : 0;
+    const avgCarbs = daysWithMeals > 0 ? totalCarbs / daysWithMeals : 0;
     
     const summaryContainer = document.getElementById('weeklyNutritionSummary');
     summaryContainer.innerHTML = `
         <div class="nutrition-item">
-            <div class="nutrition-label">総カロリー</div>
+            <div class="nutrition-label">週間総カロリー</div>
             <div class="nutrition-value">${Math.round(totalCalories)}</div>
+            <div class="nutrition-unit">1日平均: ${Math.round(avgCalories)}kcal</div>
         </div>
         <div class="nutrition-item">
             <div class="nutrition-label">たんぱく質</div>
             <div class="nutrition-value">${Math.round(totalProtein)}g</div>
+            <div class="nutrition-unit">1日平均: ${Math.round(avgProtein)}g</div>
         </div>
         <div class="nutrition-item">
             <div class="nutrition-label">脂質</div>
             <div class="nutrition-value">${Math.round(totalFat)}g</div>
+            <div class="nutrition-unit">1日平均: ${Math.round(avgFat)}g</div>
         </div>
         <div class="nutrition-item">
             <div class="nutrition-label">炭水化物</div>
             <div class="nutrition-value">${Math.round(totalCarbs)}g</div>
+            <div class="nutrition-unit">1日平均: ${Math.round(avgCarbs)}g</div>
         </div>
     `;
 }
