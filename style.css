@@ -1,3 +1,27 @@
+/* CSS変数で健康重視のカラーパレットを定義 */
+:root {
+    /* メインカラー */
+    --primary-green: #4CAF50;     /* ヘルシーグリーン */
+    --secondary-blue: #2196F3;    /* クリーンブルー */
+    --accent-orange: #FF9800;     /* エナジーオレンジ */
+    --success-lime: #8BC34A;      /* フレッシュライム */
+    --warning-yellow: #FFC107;    /* 注意イエロー */
+    --error-red: #F44336;         /* アラートレッド */
+    
+    /* 健康状態表示カラー */
+    --health-excellent: #4CAF50;  /* 優秀 */
+    --health-good: #8BC34A;       /* 良好 */
+    --health-caution: #FF9800;    /* 注意 */
+    --health-improve: #F44336;    /* 要改善 */
+    
+    /* 背景・テキストカラー */
+    --bg-primary: #FAFAFA;        /* より清潔感のある背景 */
+    --bg-secondary: #FFFFFF;
+    --text-primary: #212121;
+    --text-secondary: #757575;
+    --border-color: #E0E0E0;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -5,9 +29,10 @@
 }
 
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f5f5f5;
-    color: #333;
+    font-family: 'Noto Sans JP', 'Arial', sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
 }
 
 .container {
@@ -17,12 +42,19 @@ body {
 }
 
 header {
-    background-color: #4CAF50;
+    background: linear-gradient(135deg, var(--primary-green) 0%, var(--success-lime) 100%);
     color: white;
-    padding: 20px;
+    padding: 30px 20px;
     text-align: center;
-    border-radius: 8px;
-    margin-bottom: 20px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+}
+
+header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
 }
 
 .search-container {
@@ -38,19 +70,25 @@ header {
 }
 
 .add-btn {
-    background-color: #4CAF50;
+    background-color: var(--primary-green);
     color: white;
-    padding: 12px 24px;
+    padding: 14px 28px;
     font-size: 16px;
+    font-weight: 600;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
     margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+    transition: all 0.3s ease;
 }
 
 .add-btn:hover {
-    background-color: #45a049;
+    background-color: var(--success-lime);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
 }
+
 
 
 .recipe-form {
@@ -105,21 +143,25 @@ header {
 }
 
 .recipe-card {
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    transition: transform 0.3s;
+    background-color: var(--bg-secondary);
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-color);
+    position: relative;
 }
 
 .recipe-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
 }
 
 .recipe-card h3 {
-    color: #4CAF50;
-    margin-bottom: 10px;
+    color: var(--primary-green);
+    margin-bottom: 12px;
+    font-size: 20px;
+    font-weight: 700;
 }
 
 .recipe-card h4 {
@@ -837,31 +879,67 @@ header {
     font-size: 14px;
 }
 
+/* 栄養情報表示スタイル */
+.nutrition-info {
+    display: flex;
+    gap: 12px;
+    margin: 16px 0;
+    flex-wrap: wrap;
+}
+
+.nutrition-badge {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nutrition-badge.calories {
+    border-color: var(--accent-orange);
+    color: var(--accent-orange);
+    font-weight: 600;
+}
+
+.nutrition-badge.protein {
+    border-color: var(--secondary-blue);
+    color: var(--secondary-blue);
+}
+
 /* 各日の栄養サマリー */
 .day-nutrition-summary {
-    background-color: #E8F5E9;
-    border-radius: 4px;
-    padding: 10px;
-    margin-top: 10px;
-    font-size: 12px;
+    background: linear-gradient(135deg, #E8F5E9 0%, #F1F8E9 100%);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 12px;
+    font-size: 13px;
+    border: 1px solid rgba(139, 195, 74, 0.2);
 }
 
 .day-nutrition-title {
-    font-weight: bold;
-    color: #2E7D32;
-    margin-bottom: 5px;
+    font-weight: 700;
+    color: var(--primary-green);
+    margin-bottom: 8px;
     text-align: center;
+    font-size: 14px;
 }
 
 .day-nutrition-values {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
 }
 
 .nutrition-compact {
-    color: #333;
-    font-size: 11px;
+    color: var(--text-primary);
+    font-size: 12px;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-align: center;
 }
 
 /* 栄養サマリー */
@@ -874,16 +952,19 @@ header {
 
 .daily-nutrition-section,
 .meal-plan-summary {
-    background-color: white;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background-color: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid var(--border-color);
 }
 
 .daily-nutrition-section h3,
 .meal-plan-summary h3 {
-    color: #2E7D32;
-    margin-bottom: 15px;
+    color: var(--primary-green);
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 20px;
 }
 
 .nutrition-summary {
@@ -893,20 +974,36 @@ header {
     margin-top: 15px;
 }
 
-.nutrition-item {
+.nutrition-summaries .nutrition-item {
     text-align: center;
+    background-color: var(--bg-primary);
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.3s ease;
+}
+
+.nutrition-summaries .nutrition-item:hover {
+    background-color: rgba(76, 175, 80, 0.05);
 }
 
 .nutrition-label {
     font-size: 14px;
-    color: #666;
-    margin-bottom: 5px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-weight: 500;
 }
 
 .nutrition-value {
-    font-size: 24px;
-    font-weight: bold;
-    color: #2E7D32;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--primary-green);
+    font-family: 'Roboto Mono', monospace;
+}
+
+.nutrition-unit {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 4px;
 }
 
 /* レシピ選択モーダル */
